@@ -23,6 +23,14 @@ JNIEXPORT void JNICALL Java_org_mynanojava_MyNanoJava_sayHello
 JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_license
   (JNIEnv *, jobject);
 
+/*
+ * Class:     org_mynanojava_MyNanoJava
+ * Method:    nano_add_sub
+ * Signature: (Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nano_1add_1sub
+  (JNIEnv *, jobject, jstring, jstring, jint);
+
 #ifdef __cplusplus
 }
 #endif

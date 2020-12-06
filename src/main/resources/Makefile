@@ -21,8 +21,10 @@ all: main
 
 main: $(LIBANAME).c
 	@echo "Compiling mynanojava ..."
-	@$(CC) -I$(INCLUDEDIR) -I$(INCLUDEDIRPRIVATE) -I$(JAVAINCLUDE) -I$(JAVAINCLUDE_LINUX) -L$(LIBDIR) -fPIC -shared -o lib$(LIBANAME).so $(LIBANAME).c
+	@$(CC) -fPIC -shared -o lib$(LIBANAME).so $(LIBANAME).c -I$(INCLUDEDIR) -I$(INCLUDEDIRPRIVATE) -I$(JAVAINCLUDE) -I$(JAVAINCLUDE_LINUX) -L$(LIBDIR) -lnanocrypto1 -lsodium
+	@echo "Striping $(LIBANAME).so ..."
 	@$(STRIP) lib$(LIBANAME).so
+	@echo "Finished"
 
 .PHONY: clean
 clean:
