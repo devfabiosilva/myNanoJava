@@ -1,0 +1,31 @@
+#
+#	AUTHOR: Fábio Pereira da Silva
+#	YEAR: 2020
+#	LICENSE: MIT
+#	EMAIL: fabioegel@gmail.com or fabioegel@protonmail.com
+#
+
+# Generating tools
+#dom dez 06 16:49:52 -03 2020 
+CC=gcc
+STRIP=strip
+INCLUDEDIR=$(PWD)/include/
+INCLUDEDIRPRIVATE=$(PWD)/include/sodium/
+LIBANAME=mynanojava
+CURDIR=$(PWD)
+LIBDIR=$(CURDIR)/lib
+JAVAINCLUDE=/usr/lib/jvm/java-11-openjdk-amd64/include
+JAVAINCLUDE_LINUX=/usr/lib/jvm/java-11-openjdk-amd64/include/linux
+
+all: main
+
+main: $(LIBANAME).c
+	@echo "Compiling mynanojava ..."
+	@$(CC) -I$(INCLUDEDIR) -I$(INCLUDEDIRPRIVATE) -I$(JAVAINCLUDE) -I$(JAVAINCLUDE_LINUX) -L$(LIBDIR) -fPIC -shared -o lib$(LIBANAME).so $(LIBANAME).c
+	@$(STRIP) lib$(LIBANAME).so
+
+.PHONY: clean
+clean:
+	@echo "Cleaning $(LIBANAME) library..."
+	rm -v lib$(LIBANAME).so
+
