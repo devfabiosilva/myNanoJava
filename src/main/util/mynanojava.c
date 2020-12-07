@@ -1,18 +1,13 @@
-#include <stdio.h>
 #include <jni.h>
 #include <f_nano_crypto_util.h>
 #include <org_mynanojava_MyNanoJava.h>
 //java -Djava.library.path=. -jar
 #define EMPTY_STR ""
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
+#define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
 static char msg[512];
 
 jint throwError(JNIEnv *, char *);
-JNIEXPORT void JNICALL Java_org_mynanojava_MyNanoJava_sayHello(JNIEnv *env, jobject thisObject)
-{
-   printf("Hello World!\n");
-   return;
-}
 
 JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_license(JNIEnv *env, jobject thisObject)
 {
@@ -54,7 +49,9 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nano_1add_1sub(JNIEnv *
       goto Java_org_mynanojava_MyNanoJava_nano_1add_1sub_EXIT2;
    }
 
-   ret = (*env)->NewStringUTF(env, c_ret);
+   if (!(ret = (*env)->NewStringUTF(env, 
+      ((uint32_t)mode&F_NANO_RES_RAW_128)?((const char *)fhex2strv2(msg, (const void *)c_ret, sizeof(f_uint128_t), 0)):(const char *)c_ret)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
 
 Java_org_mynanojava_MyNanoJava_nano_1add_1sub_EXIT2:
    (*env)->ReleaseStringUTFChars(env, b, in_B_Str);
@@ -64,7 +61,16 @@ Java_org_mynanojava_MyNanoJava_nano_1add_1sub_EXIT1:
 
    return ret;
 }
+/*
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_MyNanoJava_nano_1create_1block(
+   JNIEnv *env, jobject thisObject, jstring account, jstring previous, jstring representative, jstring balance,
+   jint balance_type, jstring value_to_send_or_receive, jint value_to_send_or_receive_type, jstring link, jint direction
+)
+{
 
+   return NULL;
+}
+*/
 jint throwError(JNIEnv *env, char *message)
 {
    jclass exClass;

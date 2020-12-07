@@ -7,13 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     org_mynanojava_MyNanoJava
- * Method:    sayHello
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_mynanojava_MyNanoJava_sayHello
-  (JNIEnv *, jobject);
 
 /*
  * Class:     org_mynanojava_MyNanoJava
@@ -30,6 +23,14 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_license
  */
 JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nano_1add_1sub
   (JNIEnv *, jobject, jstring, jstring, jint);
+
+/*
+ * Class:     org_mynanojava_MyNanoJava
+ * Method:    nano_create_block
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;ILjava/lang/String;I)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_MyNanoJava_nano_1create_1block
+  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jint, jstring, jint, jstring, jint);
 
 #ifdef __cplusplus
 }
