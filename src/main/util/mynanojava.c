@@ -1,6 +1,5 @@
 #include <jni.h>
 #include <f_nano_crypto_util.h>
-#include <org_mynanojava_MyNanoJava.h>
 //java -Djava.library.path=. -jar
 #define EMPTY_STR ""
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
