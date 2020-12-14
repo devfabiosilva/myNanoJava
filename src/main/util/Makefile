@@ -9,6 +9,7 @@
 #dom dez 06 16:49:52 -03 2020 
 CC=gcc
 STRIP=strip
+EXECSTACK=execstack -c
 INCLUDEDIR=$(PWD)/include/
 INCLUDEDIRPRIVATE=$(PWD)/include/sodium/
 LIBANAME=mynanojava
@@ -24,6 +25,10 @@ main: $(LIBANAME).c
 	@$(CC) -fPIC -shared -o lib$(LIBANAME).so $(LIBANAME).c -I$(INCLUDEDIR) -I$(INCLUDEDIRPRIVATE) -I$(JAVAINCLUDE) -I$(JAVAINCLUDE_LINUX) -L$(LIBDIR) -lnanocrypto1 -lsodium
 	@echo "Striping $(LIBANAME).so ..."
 	@$(STRIP) lib$(LIBANAME).so
+	@echo "Disabling execstack ..."
+	@$(EXECSTACK) lib$(LIBANAME).so
+	@echo "Unchecking executable library ..."
+	@chmod -x lib$(LIBANAME).so
 	@echo "Finished"
 
 .PHONY: clean

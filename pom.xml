@@ -36,27 +36,15 @@
     </properties>
     <build>
         <plugins>
-            <!--plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <name>${project.artifactId}</name>
-                            <version>${project.version}</version>
-                            <expectedLiveVersion>${project.version}</expectedLiveVersion>
-                            <author>Fabio Pereira</author>
-                            <entryPoint>org.mynanojava.Main</entryPoint>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
-            </plugin-->
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkMode>always</forkMode>
+                    <workingDirectory>target</workingDirectory>
+                    <argLine>-Djava.library.path=${basedir}/src/main/util</argLine>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -70,5 +58,6 @@
             </plugin>
         </plugins>
     </build>
+
 
 </project>
