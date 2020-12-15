@@ -53,4 +53,22 @@ public class MyNanoJavaTest {
                 VALUE_TO_SEND.getValue());
         assertEquals(249, block.length);
     }
+
+    @Test
+    public void parseNanoBlockToJSON() throws Exception {
+        System.out.println("Creating Nano Block ...");
+        byte[] block = myNanoJava.nano_create_block(
+                "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
+                "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "1.8",
+                NANO_BALANCE_REAL.getValue(),
+                "1.0",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_SEND.getValue());
+        System.out.println("Block to json");
+        String str = myNanoJava.nanoBlockToJSON(block);
+        System.out.println(str);
+    }
 }

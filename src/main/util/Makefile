@@ -22,7 +22,7 @@ all: main
 
 main: $(LIBANAME).c
 	@echo "Compiling mynanojava ..."
-	@$(CC) -fPIC -shared -o lib$(LIBANAME).so $(LIBANAME).c -I$(INCLUDEDIR) -I$(INCLUDEDIRPRIVATE) -I$(JAVAINCLUDE) -I$(JAVAINCLUDE_LINUX) -L$(LIBDIR) -lnanocrypto1 -lsodium
+	@$(CC) -O2 -fPIC -shared -o lib$(LIBANAME).so $(LIBANAME).c -I$(INCLUDEDIR) -I$(INCLUDEDIRPRIVATE) -I$(JAVAINCLUDE) -I$(JAVAINCLUDE_LINUX) -L$(LIBDIR) -lnanocrypto1 -lsodium
 	@echo "Striping $(LIBANAME).so ..."
 	@$(STRIP) lib$(LIBANAME).so
 	@echo "Disabling execstack ..."

@@ -5,7 +5,7 @@
 #define EMPTY_STR ""
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
 #define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
-static char msg[512];
+static char msg[768];
 /*
 int nano_java_parse_to_pk_util(uint32_t *pk, int *is_xrb_prefix, const char *pk_or_wallet_address)
 {
@@ -236,6 +236,46 @@ Java_org_mynanojava_MyNanoJava_nano_1create_1block_EXIT1:
    (*env)->ReleaseStringUTFChars(env, account, c_account);
 
    return outByteArray;
+}
+
+JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nanoBlockToJSON(JNIEnv *env, jobject thisObject, jbyteArray nanoBlock)
+{
+   int err;
+   jbyte *c_byte_array;
+   jsize jSize;
+   jstring ret;
+size_t sz;
+
+   if (!nanoBlock) {
+      throwError(env, "nanoBlock can NOT be NULL");
+      return NULL;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, nanoBlock, JNI_FALSE))) {
+      throwError(env, "Unable to get Nano Block");
+      return NULL;
+   }
+
+   ret=NULL;
+
+   if ((jSize=(*env)->GetArrayLength(env, nanoBlock))!=249) {
+      sprintf(msg, "Wrong Nano Block size %d", (int)jSize);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_nanoBlockToJSON_EXIT1;
+   }
+
+   if ((err=f_nano_block_to_json(msg, &sz, sizeof(msg), (F_BLOCK_TRANSFER *)c_byte_array))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "f_nano_block_to_json", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_nanoBlockToJSON_EXIT1;
+   }
+
+   if (!(ret=(*env)->NewStringUTF(env, msg)))
+      throwError(env, "Error when parse Nano block to JSON");
+
+Java_org_mynanojava_MyNanoJava_nanoBlockToJSON_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, JNI_ABORT);
+   return ret;
 }
 
 jint throwError(JNIEnv *env, char *message)

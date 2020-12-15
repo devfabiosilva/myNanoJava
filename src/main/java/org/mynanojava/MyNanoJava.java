@@ -1,14 +1,5 @@
 package org.mynanojava;
 
-import org.mynanojava.enums.ManoJavaEnumDirection;
-import org.mynanojava.enums.NanoJavaEnumBalanceType;
-import org.mynanojava.enums.NanoJavaEnumValueToSendOrReceive;
-
-import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_SEND;
-import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
-import static org.mynanojava.enums.NanoJavaEnumBalanceType.*;
-import static org.mynanojava.enums.NanoJavaEnumValueToSendOrReceive.NANO_VALUE_TO_SEND_OR_RECEIVE_REAL;
-
 public class MyNanoJava {
 
     static {
@@ -28,6 +19,7 @@ public class MyNanoJava {
                 String link,
                 int direction
             ) throws Exception;
+    public native String nanoBlockToJSON(byte[] nanoBlock) throws Exception;
 
 // Quick test JNI ...
     /*
