@@ -64,8 +64,8 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nano_1add_1sub(JNIEnv *
 {
    int err;
    jstring ret;
-   const char *in_A_Str, *in_B_Str;
-   char c_ret[F_RAW_STR_MAX_SZ];
+   const char *in_A_Str, *in_B_Str, *p_A_str, *p_B_str;
+   char c_ret[2*F_RAW_STR_MAX_SZ]; // ALERT ! It MUST BE 2x MAX size due to MBEDTLS. Never CHANGE IT to lower
 
    if (!a) {
       throwError(env, "A value is NULL");
@@ -89,7 +89,25 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nano_1add_1sub(JNIEnv *
       goto Java_org_mynanojava_MyNanoJava_nano_1add_1sub_EXIT1;
    }
 
-   if ((err = f_nano_add_sub((void *)c_ret, (void *)in_A_Str, (void *)in_B_Str, (uint32_t)mode))) {
+   if ((uint32_t)mode&F_NANO_A_RAW_128) {
+      if ((err=nano_java_raw128_str_to_bin_util((uint8_t *)(p_A_str=(const char *)msg), in_A_Str))) {
+         sprintf(msg, "Hex A value: "MY_NANO_EMBEDDED_ERROR, "nano_java_raw128_str_to_bin_util", err);
+         throwError(env, msg);
+         goto Java_org_mynanojava_MyNanoJava_nano_1add_1sub_EXIT2;
+      }
+   } else
+      p_A_str=in_A_Str;
+
+   if ((uint32_t)mode&F_NANO_B_RAW_128) {
+      if ((err=nano_java_raw128_str_to_bin_util((uint8_t *)(p_B_str=(const char *)(msg+sizeof(f_uint128_t))), in_B_Str))) {
+         sprintf(msg, "Hex B value: "MY_NANO_EMBEDDED_ERROR, "nano_java_raw128_str_to_bin_util", err);
+         throwError(env, msg);
+         goto Java_org_mynanojava_MyNanoJava_nano_1add_1sub_EXIT2;
+      }
+   } else
+      p_B_str=in_B_Str;
+
+   if ((err = f_nano_add_sub((void *)c_ret, (void *)p_A_str, (void *)p_B_str, (uint32_t)mode))) {
       sprintf(msg, MY_NANO_EMBEDDED_ERROR, "f_nano_add_sub", err);
       throwError(env, msg);
       goto Java_org_mynanojava_MyNanoJava_nano_1add_1sub_EXIT2;
@@ -244,7 +262,6 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nanoBlockToJSON(JNIEnv 
    jbyte *c_byte_array;
    jsize jSize;
    jstring ret;
-size_t sz;
 
    if (!nanoBlock) {
       throwError(env, "nanoBlock can NOT be NULL");
@@ -264,7 +281,7 @@ size_t sz;
       goto Java_org_mynanojava_MyNanoJava_nanoBlockToJSON_EXIT1;
    }
 
-   if ((err=f_nano_block_to_json(msg, &sz, sizeof(msg), (F_BLOCK_TRANSFER *)c_byte_array))) {
+   if ((err=f_nano_block_to_json(msg, NULL, sizeof(msg), (F_BLOCK_TRANSFER *)c_byte_array))) {
       sprintf(msg, MY_NANO_EMBEDDED_ERROR, "f_nano_block_to_json", err);
       throwError(env, msg);
       goto Java_org_mynanojava_MyNanoJava_nanoBlockToJSON_EXIT1;
@@ -276,6 +293,94 @@ size_t sz;
 Java_org_mynanojava_MyNanoJava_nanoBlockToJSON_EXIT1:
    (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, JNI_ABORT);
    return ret;
+}
+
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock(JNIEnv *env, jobject thisObj, jbyteArray block, jstring workerAccount,
+   jstring workerFee, jint workerFeeType, jstring workerRepresentative)
+{
+   int err;
+   F_BLOCK_TRANSFER *p2pow_block;
+   jbyte *c_byte_array;
+   const char *p_worker_rep, *c_worker_account, *c_worker_fee;
+   jbyteArray outByteArray;
+
+   if (!block) {
+      throwError(env, "Missing user block");
+      return NULL;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, block, JNI_FALSE))) {
+      throwError(env, "P2PoW error when parse Nano block");
+      return NULL;
+   }
+
+   outByteArray=NULL;
+
+   if ((err=(int)(*env)->GetArrayLength(env, block))!=249) {
+      sprintf(msg, "P2PoW: Wrong Nano Block size %d", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT1;
+   }
+
+   if (!workerAccount) {
+      throwError(env, "Missing worker account");
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT1;
+   }
+
+   if (!(c_worker_account=(*env)->GetStringUTFChars(env, workerAccount, NULL))) {
+      throwError(env, "P2PoW error when parse worker account");
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT1;
+   }
+
+   if (!workerFee) {
+      throwError(env, "Missing worker fee");
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT2;
+   }
+
+   if (!(c_worker_fee=(*env)->GetStringUTFChars(env, workerFee, NULL))) {
+      throwError(env, "P2PoW error when parse worker fee");
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT2;
+   }
+
+   if (!workerRepresentative)
+      p_worker_rep=NULL;
+   else if (!(p_worker_rep=(*env)->GetStringUTFChars(env, workerRepresentative, NULL))) {
+      throwError(env, "Error when parse worker representative");
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT3;
+   }
+
+   if ((err=nano_create_p2pow_block_dynamic(&p2pow_block, (F_BLOCK_TRANSFER *)c_byte_array, c_worker_account, 0, c_worker_fee, (uint32_t)workerFeeType,
+      p_worker_rep, 0))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "nano_create_p2pow_block_dynamic", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT4;
+   }
+
+   if (!(outByteArray=(*env)->NewByteArray(env, 2*sizeof(F_BLOCK_TRANSFER)))) {
+      throwError(env, "P2PoW error: Can't create JNI byte array");
+      goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT5;
+   }
+
+   (*env)->SetByteArrayRegion(env, outByteArray, 0, 2*sizeof(F_BLOCK_TRANSFER), (const jbyte *)p2pow_block);
+
+Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT5:
+   memset(p2pow_block, 0, 2*sizeof(F_BLOCK_TRANSFER));
+   free(p2pow_block);
+
+Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT4:
+   if (p_worker_rep)
+      (*env)->ReleaseStringUTFChars(env, workerRepresentative, p_worker_rep);
+
+Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT3:
+   (*env)->ReleaseStringUTFChars(env, workerFee, c_worker_fee);
+
+Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT2:
+   (*env)->ReleaseStringUTFChars(env, workerAccount, c_worker_account);
+
+Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, block, c_byte_array, JNI_ABORT);
+
+   return outByteArray;
 }
 
 jint throwError(JNIEnv *env, char *message)

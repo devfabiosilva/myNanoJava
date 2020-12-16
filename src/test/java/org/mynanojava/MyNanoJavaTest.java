@@ -8,6 +8,7 @@ import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_SEND;
 import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.NANO_BALANCE_REAL;
 import static org.mynanojava.enums.NanoJavaEnumValueToSendOrReceive.NANO_VALUE_TO_SEND_OR_RECEIVE_REAL;
+import static org.mynanojava.enums.NanoJavaEnumWorkerFeeType.NANO_FEE_REAL;
 
 public class MyNanoJavaTest {
 
@@ -68,7 +69,10 @@ public class MyNanoJavaTest {
                 "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
                 VALUE_TO_SEND.getValue());
         System.out.println("Block to json");
-        String str = myNanoJava.nanoBlockToJSON(block);
-        System.out.println(str);
+        System.out.println(myNanoJava.nanoBlockToJSON(block));
+        byte[] p2pow = myNanoJava.nanoP2PoWBlock(block,
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "0.8", NANO_FEE_REAL.getValue(), null);
+        System.out.println(p2pow.length);
     }
 }

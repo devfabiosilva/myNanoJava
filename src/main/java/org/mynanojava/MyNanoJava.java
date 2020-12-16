@@ -18,12 +18,13 @@ public class MyNanoJava {
                 int valueToSendOrReceiveType,
                 String link,
                 int direction
-            ) throws Exception;
+    ) throws Exception;
     public native String nanoBlockToJSON(byte[] nanoBlock) throws Exception;
-
-// Quick test JNI ...
-    /*
-    public static void main(String[] args) {
-
-    }*/
+    public native byte[] nanoP2PoWBlock(
+            byte[] block,
+            String workerAccount,
+            String workerFee,
+            int workerFeeType,
+            String workerRepresentative
+    ) throws Exception;
 }
