@@ -27,4 +27,5 @@ public class MyNanoJava {
             int workerFeeType,
             String workerRepresentative
     ) throws Exception;
+    public native String p2powToJson(byte[] p2powBlock) throws Exception;
 }

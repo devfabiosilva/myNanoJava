@@ -275,7 +275,7 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_nanoBlockToJSON(JNIEnv 
 
    ret=NULL;
 
-   if ((jSize=(*env)->GetArrayLength(env, nanoBlock))!=249) {
+   if ((jSize=(*env)->GetArrayLength(env, nanoBlock))!=F_BLOCK_TRANSFER_SIZE) {
       sprintf(msg, "Wrong Nano Block size %d", (int)jSize);
       throwError(env, msg);
       goto Java_org_mynanojava_MyNanoJava_nanoBlockToJSON_EXIT1;
@@ -316,7 +316,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock(JNIEn
 
    outByteArray=NULL;
 
-   if ((err=(int)(*env)->GetArrayLength(env, block))!=249) {
+   if ((err=(int)(*env)->GetArrayLength(env, block))!=F_BLOCK_TRANSFER_SIZE) {
       sprintf(msg, "P2PoW: Wrong Nano Block size %d", err);
       throwError(env, msg);
       goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT1;
@@ -356,12 +356,12 @@ JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock(JNIEn
       goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT4;
    }
 
-   if (!(outByteArray=(*env)->NewByteArray(env, 2*sizeof(F_BLOCK_TRANSFER)))) {
+   if (!(outByteArray=(*env)->NewByteArray(env, F_P2POW_BLOCK_TRANSFER_SIZE))) {
       throwError(env, "P2PoW error: Can't create JNI byte array");
       goto Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT5;
    }
 
-   (*env)->SetByteArrayRegion(env, outByteArray, 0, 2*sizeof(F_BLOCK_TRANSFER), (const jbyte *)p2pow_block);
+   (*env)->SetByteArrayRegion(env, outByteArray, 0, F_P2POW_BLOCK_TRANSFER_SIZE, (const jbyte *)p2pow_block);
 
 Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT5:
    memset(p2pow_block, 0, 2*sizeof(F_BLOCK_TRANSFER));
@@ -381,6 +381,56 @@ Java_org_mynanojava_MyNanoJava_nanoP2PoWBlock_EXIT1:
    (*env)->ReleaseByteArrayElements(env, block, c_byte_array, JNI_ABORT);
 
    return outByteArray;
+}
+
+#define NANO_P2POW_BUFFER_SZ (size_t)2048
+JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_p2powToJson(JNIEnv *env, jobject thisObj, jbyteArray nanoBlock)
+{
+   int err;
+   jbyte *c_byte_array;
+   char *buffer;
+   jstring ret;
+
+   if (!nanoBlock) {
+      throwError(env, "Missing Nano Block");
+      return NULL;
+   }
+
+   if ((err=(int)(*env)->GetArrayLength(env, nanoBlock))!=F_P2POW_BLOCK_TRANSFER_SIZE) {
+      sprintf(msg, "P2PoW to JSON: Wrong Nano Block size %d", err);
+      throwError(env, msg);
+      return NULL;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, nanoBlock, JNI_FALSE))) {
+      throwError(env, "P2PoW to JSON error. Can't parse byte array");
+      return NULL;
+   }
+
+   ret=NULL;
+
+   if (!(buffer=malloc(NANO_P2POW_BUFFER_SZ))) {
+      throwError(env, "P2PoW Malloc error");
+      goto Java_org_mynanojava_MyNanoJava_p2powToJson_EXIT1;
+   }
+
+   if ((err=f_nano_p2pow_to_JSON(buffer, NULL, NANO_P2POW_BUFFER_SZ, (F_BLOCK_TRANSFER *)c_byte_array))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "f_nano_p2pow_to_JSON", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_p2powToJson_EXIT2;
+   }
+
+   if (!(ret=(*env)->NewStringUTF(env, buffer)))
+      throwError(env, "Error when parse P2PoW block to JSON");;
+
+Java_org_mynanojava_MyNanoJava_p2powToJson_EXIT2:
+   memset(buffer, 0, NANO_P2POW_BUFFER_SZ);
+   free(buffer);
+
+Java_org_mynanojava_MyNanoJava_p2powToJson_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, JNI_ABORT);
+
+   return ret;
 }
 
 jint throwError(JNIEnv *env, char *message)

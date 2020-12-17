@@ -72,7 +72,8 @@ public class MyNanoJavaTest {
         System.out.println(myNanoJava.nanoBlockToJSON(block));
         byte[] p2pow = myNanoJava.nanoP2PoWBlock(block,
                 "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
-                "0.8", NANO_FEE_REAL.getValue(), null);
+                "0.7", NANO_FEE_REAL.getValue(), null);
         System.out.println(p2pow.length);
+        System.out.println(myNanoJava.p2powToJson(p2pow));
     }
 }
