@@ -76,4 +76,9 @@ public class MyNanoJavaTest {
         System.out.println(p2pow.length);
         System.out.println(myNanoJava.p2powToJson(p2pow));
     }
+
+    @Test
+    public void testNanoPoW() throws Exception {
+        System.out.println("\n"+myNanoJava.nanoPoW("83170d1119c054cefcd3d2f2192b2e6e93b0a7664b934ef599ab11ceae5b482b", null, 4)+"\n");
+    }
 }

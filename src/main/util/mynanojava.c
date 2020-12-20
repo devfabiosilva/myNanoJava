@@ -2,6 +2,7 @@
 #include <f_nano_crypto_util.h>
 //java -Djava.library.path=. -jar
 ////https://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
+//https://developer.android.com/training/articles/perf-jni?hl=pt-br
 #define EMPTY_STR ""
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
 #define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
@@ -44,6 +45,34 @@ int nano_java_is_pk_str_util(uint32_t *pk, const char *pk_or_wallet_address)
    return err;
 }
 */
+
+void gen_rand_no_entropy_util(void *output, size_t output_len)
+{
+   FILE *f;
+   size_t rnd_sz, left;
+
+   if (!(f=fopen("/dev/urandom", "r")))
+      return;
+
+   rnd_sz=0;
+   left=output_len;
+
+   while ((rnd_sz+=fread(output+rnd_sz, 1, left, f))<output_len)
+      left-=rnd_sz;
+
+   fclose(f);
+
+   return;
+
+}
+
+inline int array32bytes_str_to_hex_util(uint8_t *out, const char *in)
+{
+   if (strnlen(in, 65)!=64)
+      return -21;
+
+   return f_str_to_hex(out, (char *)in);
+}
 
 int nano_java_raw128_str_to_bin_util(uint8_t *dest, const char *str)
 {
@@ -431,6 +460,94 @@ Java_org_mynanojava_MyNanoJava_p2powToJson_EXIT1:
    (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, JNI_ABORT);
 
    return ret;
+}
+
+/*
+ * Class:     org_mynanojava_MyNanoJava
+ * Method:    nanoCreateBlock
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;ILjava/lang/String;I)Lorg/mynanojava/blockchain/NanoBlock;
+ */
+/*
+JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
+   JNIEnv *env, jobject thisObject, jstring account, jstring previous, jstring representative, jstring balance,
+   jint balance_type, jstring value_to_send_or_receive, jint value_to_send_or_receive_type, jstring link, jint direction
+)
+{
+
+   int err;
+   jobject jResult;
+   jclass jNanoBlock;
+   uint32_t types;
+   F_BLOCK_TRANSFER *nano_block;
+
+   TODO Implement it please !
+
+   return jResult;
+
+}
+*/
+
+
+JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobject thisObj, jstring jHash, jobject jThreshold, jint jNumberOfThreads)
+{
+   int err;
+   const char *c_hash;
+   uint64_t c_threshold, result;
+   jfieldID fieldThreshold;
+   jmethodID methodId;
+   jclass userDataClass;
+
+   if (!jHash) {
+      throwError(env, "Missing hash");
+      return -1;
+   }
+
+   if (jThreshold) {
+
+      if (!(userDataClass=(*env)->FindClass(env, "java/lang/Long"))) {
+         throwError(env, "Error when finding JVM Long class in Nano PoW method");
+         return -2;
+      }
+
+      if (!(methodId=(*env)->GetMethodID(env, userDataClass, "longValue", "()J"))) {
+         throwError(env, "Error when get JVM method in threshold long value");
+         return -3;
+      }
+
+      c_threshold=(uint64_t)(*env)->CallLongMethod(env, jThreshold, methodId);
+
+      if ((*env)->ExceptionCheck(env)) {
+         throwError(env, "Error when calling long method in JVM for Nano PoW method");
+         return -4;
+      }
+
+   } else
+      c_threshold=F_DEFAULT_THRESHOLD;
+
+   if (!(c_hash=(*env)->GetStringUTFChars(env, jHash, NULL))) {
+      throwError(env, "Error when get Nano Hash value");
+      return -5;
+   }
+
+   if ((err=array32bytes_str_to_hex_util((uint8_t *)msg, (const char *)c_hash))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "array32bytes_str_to_hex_util", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_nanoPoW_EXIT1;
+   }
+
+   f_random_attach(gen_rand_no_entropy_util);
+
+   if ((err=f_nano_pow(&result, (unsigned char *)msg, c_threshold, (int)jNumberOfThreads))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "f_nano_pow", err);
+      throwError(env, msg);
+   }
+
+   f_random_detach();
+
+Java_org_mynanojava_MyNanoJava_nanoPoW_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, jHash, c_hash);
+
+   return (jlong)result;
 }
 
 jint throwError(JNIEnv *env, char *message)
