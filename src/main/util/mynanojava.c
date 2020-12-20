@@ -493,7 +493,6 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobj
    int err;
    const char *c_hash;
    uint64_t c_threshold, result;
-   jfieldID fieldThreshold;
    jmethodID methodId;
    jclass userDataClass;
 
@@ -530,6 +529,7 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobj
    }
 
    if ((err=array32bytes_str_to_hex_util((uint8_t *)msg, (const char *)c_hash))) {
+      result=-6;
       sprintf(msg, MY_NANO_EMBEDDED_ERROR, "array32bytes_str_to_hex_util", err);
       throwError(env, msg);
       goto Java_org_mynanojava_MyNanoJava_nanoPoW_EXIT1;
@@ -538,6 +538,7 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobj
    f_random_attach(gen_rand_no_entropy_util);
 
    if ((err=f_nano_pow(&result, (unsigned char *)msg, c_threshold, (int)jNumberOfThreads))) {
+      result=-7;
       sprintf(msg, MY_NANO_EMBEDDED_ERROR, "f_nano_pow", err);
       throwError(env, msg);
    }

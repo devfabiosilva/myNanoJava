@@ -79,6 +79,6 @@ public class MyNanoJavaTest {
 
     @Test
     public void testNanoPoW() throws Exception {
-        System.out.println("\n"+myNanoJava.nanoPoW("83170d1119c054cefcd3d2f2192b2e6e93b0a7664b934ef599ab11ceae5b482b", null, 4)+"\n");
+        System.out.println("\n"+myNanoJava.nanoPoW("83170d1119c054cefcd3d2f2192b2e6e93b0a7664b934ef599ab11ceae5b482b", Long.valueOf(0xff00000000000000L), 4)+"\n");
     }
 }
