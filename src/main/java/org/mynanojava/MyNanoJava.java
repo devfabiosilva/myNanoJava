@@ -32,7 +32,7 @@ public class MyNanoJava {
             int valueToSendOrReceiveType,
             String link,
             int direction
-    );
+    ) throws Exception;
 
     public native String nanoBlockToJSON(byte[] nanoBlock) throws Exception;
     public native byte[] nanoP2PoWBlock(

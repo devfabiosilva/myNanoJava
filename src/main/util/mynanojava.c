@@ -6,6 +6,8 @@
 #define EMPTY_STR ""
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
 #define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
+#define NANO_BLOCK_CLASS_PATH "org/mynanojava/blockchain/NanoBlock"
+#define NANO_JAVA_GET_INIT_METHOD(class) (*env)->GetMethodID(env, class, "<init>", "void(V)")
 static char msg[768];
 /*
 int nano_java_parse_to_pk_util(uint32_t *pk, int *is_xrb_prefix, const char *pk_or_wallet_address)
@@ -467,7 +469,7 @@ Java_org_mynanojava_MyNanoJava_p2powToJson_EXIT1:
  * Method:    nanoCreateBlock
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;ILjava/lang/String;I)Lorg/mynanojava/blockchain/NanoBlock;
  */
-/*
+
 JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    JNIEnv *env, jobject thisObject, jstring account, jstring previous, jstring representative, jstring balance,
    jint balance_type, jstring value_to_send_or_receive, jint value_to_send_or_receive_type, jstring link, jint direction
@@ -475,17 +477,159 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
 {
 
    int err;
+   const char *c_account, *c_previous, *c_representative, *c_balance, *c_value_to_send_or_receive, *c_link, *p_balance, *p_val_send_rec;
    jobject jResult;
-   jclass jNanoBlock;
+   jclass jNanoBlockClass;
+   jmethodID methodId;
+   jfieldID fieldId;
+   jbyte *c_byte_array;
+   jbyteArray byte_array;
    uint32_t types;
    F_BLOCK_TRANSFER *nano_block;
 
-   TODO Implement it please !
+   //TODO Implement it please !
+
+   if (!account) {
+      throwError(env, "nanoCreateBlock: Missing account");
+      return NULL;
+   }
+
+   if (!previous) {
+      throwError(env, "nanoCreateBlock: Missing previous");
+      return NULL;
+   }
+
+   if (!representative) {
+      throwError(env, "nanoCreateBlock: Missing representative");
+      return NULL;
+   }
+
+   if (!balance) {
+      throwError(env, "nanoCreateBlock: Missing balance");
+      return NULL;
+   }
+
+   if (!value_to_send_or_receive) {
+      throwError(env, "nanoCreateBlock: Missing value to send or receive");
+      return NULL;
+   }
+
+   if (!link) {
+      throwError(env, "nanoCreateBlock: Missing destination wallet or link to open block");
+      return NULL;
+   }
+
+   if (!(c_account=(*env)->GetStringUTFChars(env, account, NULL))) {
+      throwError(env, "nanoCreateBlock: Get UTF account error");
+      return NULL;
+   }
+
+   jResult=NULL;
+
+   if (!(c_previous=(*env)->GetStringUTFChars(env, previous, NULL))) {
+      throwError(env, "nanoCreateBlock: Get UTF previous error");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT1;
+   }
+
+   if (!(c_representative=(*env)->GetStringUTFChars(env, representative, NULL))) {
+      throwError(env, "nanoCreateBlock: Get UTF representative error");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT2;
+   }
+
+   if (!(c_balance=(*env)->GetStringUTFChars(env, balance, NULL))) {
+      throwError(env, "nanoCreateBlock: Get UTF balance error");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT3;
+   }
+
+   if (!(c_value_to_send_or_receive=(*env)->GetStringUTFChars(env, value_to_send_or_receive, NULL))) {
+      throwError(env, "nanoCreateBlock: Get UTF value to send/receive error");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT4;
+   }
+
+   if (!(c_link=(*env)->GetStringUTFChars(env, link, NULL))) {
+      throwError(env, "nanoCreateBlock: Get UTF send wallet address or link error");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT5;
+   }
+
+   p_balance=c_balance;
+
+   if ((types=(uint32_t)(balance_type|value_to_send_or_receive_type))&F_BALANCE_RAW_128)
+      if ((err=nano_java_raw128_str_to_bin_util((uint8_t *)(p_balance=(const char *)msg), c_balance))) {
+         sprintf(msg, "nanoCreateBlock: Error when parse hex balance to bin. "MY_NANO_EMBEDDED_ERROR, "nano_java_raw128_str_to_bin_util", err);
+         throwError(env, msg);
+         goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6;
+      }
+
+   p_val_send_rec=c_value_to_send_or_receive;
+
+   if (types&F_VALUE_SEND_RECEIVE_RAW_128)
+      if ((err=nano_java_raw128_str_to_bin_util((uint8_t *)(p_val_send_rec=((const char *)&msg[sizeof(f_uint128_t)])), c_value_to_send_or_receive))) {
+         sprintf(msg, "nanoCreateBlock: Error when parse hex send or receive value to bin. "MY_NANO_EMBEDDED_ERROR, "nano_java_raw128_str_to_bin_util", err);
+         throwError(env, msg);
+         goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6;
+      }
+
+   if ((err=nano_create_block_dynamic(&nano_block, c_account, 0, c_previous, 0, c_representative, 0, p_balance, p_val_send_rec,
+      (uint32_t)types, c_link, 0, direction))) {
+      sprintf(msg, "nanoCreateBlock: "MY_NANO_EMBEDDED_ERROR, "nano_create_block_dynamic", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6;
+   }
+
+   if ((jNanoBlockClass=(*env)->FindClass(env, NANO_BLOCK_CLASS_PATH))) {
+      throwError(env, "nanoCreateBlock: Can't find class org.mynanojava.blockchain.NanoBlock");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
+   }
+
+   if ((methodId=NANO_JAVA_GET_INIT_METHOD(jNanoBlockClass))) {
+      throwError(env, "nanoCreateBlock: Can't Init new class NanoBlock");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
+   }
+
+   if ((jResult=(*env)->NewObject(env, jNanoBlockClass, methodId))) {
+      throwError(env, "nanoCreateBlock: Can't create NanoBlock Object");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
+   }
+
+   if ((fieldId=(*env)->GetFieldID(env, jNanoBlockClass, "account", "[B"))) {
+      throwError(env, "nanoCreateBlock: Can't get account byte array");
+      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT8;
+   }
+
+   byte_array=(*env)->GetObjectField(env, jResult, fieldId);
+   printf("Is NULL? %d", (byte_array)?1:0);
+
+   goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT8:
+   (*env)->DeleteLocalRef(env, jResult);
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7:
+   memset(nano_block, 0, sizeof(F_BLOCK_TRANSFER));
+   free(nano_block);
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6:
+   (*env)->ReleaseStringUTFChars(env, link, c_link);
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT5:
+   (*env)->ReleaseStringUTFChars(env, value_to_send_or_receive, c_value_to_send_or_receive);
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT4:
+   (*env)->ReleaseStringUTFChars(env, balance, c_balance);
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT3:
+   (*env)->ReleaseStringUTFChars(env, representative, c_representative);
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT2:
+   (*env)->ReleaseStringUTFChars(env, previous, c_previous);
+
+Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, account, c_account);
 
    return jResult;
 
 }
-*/
+
 
 
 JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobject thisObj, jstring jHash, jobject jThreshold, jint jNumberOfThreads)
