@@ -7,46 +7,8 @@
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
 #define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
 #define NANO_BLOCK_CLASS_PATH "org/mynanojava/blockchain/NanoBlock"
-#define NANO_JAVA_GET_INIT_METHOD(class) (*env)->GetMethodID(env, class, "<init>", "void(V)")
+#define NANO_JAVA_GET_INIT_METHOD(class) (*env)->GetMethodID(env, class, "<init>", "()V")
 static char msg[768];
-/*
-int nano_java_parse_to_pk_util(uint32_t *pk, int *is_xrb_prefix, const char *pk_or_wallet_address)
-{
-   int err;
-   uint8_t pk_tmp[MAX_STR_NANO_CHAR];
-
-   if (is_xrb_prefix)
-      *is_xrb_prefix=0;
-
-   if (is_nano_prefix(pk_or_wallet_address, NANO_PREFIX))
-      goto nano_java_parse_to_pk_util_PASS1;
-   else if (is_nano_prefix(pk_or_wallet_address, XRB_PREFIX)) {
-      if (is_xrb_prefix)
-         *is_xrb_prefix=1;
-nano_java_parse_to_pk_util_PASS1:
-      err=nano_base_32_2_hex(pk_tmp, (char *)pk_or_wallet_address);
-   } else if (!(err=f_str_to_hex(pk_tmp, (char *)pk_or_wallet_address)))
-      memcpy(pk, pk_tmp, 32);
-
-   return err;
-}
-*/
-/*
-int nano_java_is_pk_str_util(uint32_t *pk, const char *pk_or_wallet_address)
-{
-   int err=1;
-   size_t sz_tmp;
-   uint8_t pk_tmp[MAX_STR_NANO_CHAR];
-
-   if ((is_nano_prefix(pk_or_wallet_address, NANO_PREFIX))||(is_nano_prefix(pk_or_wallet_address, XRB_PREFIX))) err=0;
-   else if ((sz_tmp=strnlen(pk_or_wallet_address, MAX_STR_NANO_CHAR)==MAX_STR_NANO_CHAR)) err=-1;
-   else if (sz_tmp!=64) err=-2;
-   else if (f_str_to_hex(pk_tmp, (char *)pk_or_wallet_address)) err=-3;
-   else memcpy(pk, pk_tmp, 32);
-
-   return err;
-}
-*/
 
 void gen_rand_no_entropy_util(void *output, size_t output_len)
 {
@@ -464,6 +426,98 @@ Java_org_mynanojava_MyNanoJava_p2powToJson_EXIT1:
    return ret;
 }
 
+int setByteArrayFieldId_util(
+   JNIEnv *env,
+   jobject thisObject,
+   jclass class,
+   const char *fieldId,
+   uint8_t *c_byte_array,
+   size_t c_byte_array_sz
+)
+{
+
+   jfieldID field;
+   jbyteArray byte_array;
+
+   if (!(field=(*env)->GetFieldID(env, class, fieldId, "[B")))
+      return -40;
+
+   if (!(byte_array=(*env)->NewByteArray(env, c_byte_array_sz)))
+      return -41;
+
+   (*env)->SetByteArrayRegion(env, byte_array, 0, c_byte_array_sz, (const jbyte *)c_byte_array);
+   (*env)->SetObjectField(env, thisObject, field, byte_array);
+   (*env)->DeleteLocalRef(env, byte_array);
+
+   return 0;
+}
+
+#define NANO_BLK_ACCOUNT "account"
+#define NANO_BLK_PREVIOUS "previous"
+#define NANO_BLK_REPRESENTATIVE "representative"
+#define NANO_BLK_BALANCE "balance"
+#define NANO_BLK_LINK "link"
+#define NANO_BLK_SIGNATURE "signature"
+#define NANO_BLK_WORK "work"
+#define NANO_BLK_PREFIXES "prefixes"
+
+typedef struct set_nano_blk_to_jvm_t {
+   const char *key;
+   const size_t offset;
+   const size_t size;
+} NANO_BLK_TO_JVM;
+
+static NANO_BLK_TO_JVM blk_to_jvm[] = {
+   {NANO_BLK_ACCOUNT, offsetof(F_BLOCK_TRANSFER, account), sizeof(((F_BLOCK_TRANSFER *)0)->account)},
+   {NANO_BLK_PREVIOUS, offsetof(F_BLOCK_TRANSFER, previous), sizeof(((F_BLOCK_TRANSFER *)0)->previous)},
+   {NANO_BLK_REPRESENTATIVE, offsetof(F_BLOCK_TRANSFER, representative), sizeof(((F_BLOCK_TRANSFER *)0)->representative)},
+   {NANO_BLK_BALANCE, offsetof(F_BLOCK_TRANSFER, balance), sizeof(((F_BLOCK_TRANSFER *)0)->balance)},
+   {NANO_BLK_LINK, offsetof(F_BLOCK_TRANSFER, link), sizeof(((F_BLOCK_TRANSFER *)0)->link)},
+   {NANO_BLK_SIGNATURE, offsetof(F_BLOCK_TRANSFER, signature), sizeof(((F_BLOCK_TRANSFER *)0)->signature)},
+   {0}
+};
+
+#define NANO_CREATE_BLOCK_ERROR_MSG "setNanoBlockToJVM_util: Error when set byte array field in %s %d"
+
+int setNanoBlockToJVM_util(
+   JNIEnv *env,
+   jobject thisObject,
+   jclass thisClass,
+   F_BLOCK_TRANSFER *nano_block
+)
+{
+   int err;
+   NANO_BLK_TO_JVM *blk;
+   jfieldID field;
+   jbyteArray byte_array;
+
+   if (!(field=(*env)->GetFieldID(env, thisClass, NANO_BLK_WORK, "J"))) {
+      sprintf(msg, NANO_CREATE_BLOCK_ERROR_MSG, NANO_BLK_WORK, err=-42);
+      return err;
+   }
+
+   (*env)->SetLongField(env, thisObject, field, (jlong)nano_block->work);
+
+   if (!(field=(*env)->GetFieldID(env, thisClass, NANO_BLK_PREFIXES, "I"))) {
+      sprintf(msg, NANO_CREATE_BLOCK_ERROR_MSG, NANO_BLK_PREFIXES, err=-43);
+      return err;
+   }
+
+   (*env)->SetIntField(env, thisObject, field, (jint)nano_block->prefixes);
+
+   blk=blk_to_jvm;
+
+   while (blk->key) {
+      if ((err=setByteArrayFieldId_util(env, thisObject, thisClass, blk->key, (((uint8_t *)nano_block)+(size_t)blk->offset), (size_t)blk->size))) {
+         sprintf(msg, NANO_CREATE_BLOCK_ERROR_MSG, blk->key, err);
+         return err;
+      }
+      blk++;
+   }
+
+   return 0;
+}
+
 /*
  * Class:     org_mynanojava_MyNanoJava
  * Method:    nanoCreateBlock
@@ -486,8 +540,6 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    jbyteArray byte_array;
    uint32_t types;
    F_BLOCK_TRANSFER *nano_block;
-
-   //TODO Implement it please !
 
    if (!account) {
       throwError(env, "nanoCreateBlock: Missing account");
@@ -576,28 +628,25 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6;
    }
 
-   if ((jNanoBlockClass=(*env)->FindClass(env, NANO_BLOCK_CLASS_PATH))) {
+   if (!(jNanoBlockClass=(*env)->FindClass(env, NANO_BLOCK_CLASS_PATH))) {
       throwError(env, "nanoCreateBlock: Can't find class org.mynanojava.blockchain.NanoBlock");
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
    }
 
-   if ((methodId=NANO_JAVA_GET_INIT_METHOD(jNanoBlockClass))) {
+   if (!(methodId=NANO_JAVA_GET_INIT_METHOD(jNanoBlockClass))) {
       throwError(env, "nanoCreateBlock: Can't Init new class NanoBlock");
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
    }
 
-   if ((jResult=(*env)->NewObject(env, jNanoBlockClass, methodId))) {
+   if (!(jResult=(*env)->NewObject(env, jNanoBlockClass, methodId))) {
       throwError(env, "nanoCreateBlock: Can't create NanoBlock Object");
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
    }
 
-   if ((fieldId=(*env)->GetFieldID(env, jNanoBlockClass, "account", "[B"))) {
-      throwError(env, "nanoCreateBlock: Can't get account byte array");
+   if ((err=setNanoBlockToJVM_util(env, jResult, jNanoBlockClass, nano_block))) {
+      throwError(env, msg);
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT8;
    }
-
-   byte_array=(*env)->GetObjectField(env, jResult, fieldId);
-   printf("Is NULL? %d", (byte_array)?1:0);
 
    goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
 
@@ -629,8 +678,6 @@ Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT1:
    return jResult;
 
 }
-
-
 
 JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobject thisObj, jstring jHash, jobject jThreshold, jint jNumberOfThreads)
 {

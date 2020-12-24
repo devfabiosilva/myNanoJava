@@ -3,11 +3,13 @@ package org.mynanojava;
 import org.junit.Before;
 import org.junit.Test;
 import org.mynanojava.blockchain.NanoBlock;
+import org.mynanojava.enums.NanoJavaEnumPrefix;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_SEND;
 import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.NANO_BALANCE_REAL;
+import static org.mynanojava.enums.NanoJavaEnumPrefix.SENDER_XRB;
 import static org.mynanojava.enums.NanoJavaEnumValueToSendOrReceive.NANO_VALUE_TO_SEND_OR_RECEIVE_REAL;
 import static org.mynanojava.enums.NanoJavaEnumWorkerFeeType.NANO_FEE_REAL;
 
@@ -97,6 +99,9 @@ public class MyNanoJavaTest {
                 VALUE_TO_SEND.getValue()
         );
         assertNotEquals(null, nanoBlock);
+        assertNotEquals(null, nanoBlock.getByteAccount());
+        assertNotEquals(null, nanoBlock.getBytePrevious());
+        assertEquals(true, nanoBlock.hasXRBPrefix(SENDER_XRB));
 
     }
 }

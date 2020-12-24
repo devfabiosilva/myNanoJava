@@ -47,6 +47,30 @@ public class NanoBlock {
     }
 
     public boolean hasXRBPrefix(NanoJavaEnumPrefix prefix) {
-        return true;
+        return ((prefix.getValue()&this.prefixes)!=0);
+    }
+
+    public byte[] getByteAccount() {
+        return this.account;
+    }
+
+    public byte[] getBytePrevious() {
+        return this.previous;
+    }
+
+    public byte[] getByteRepresentative() {
+        return this.representative;
+    }
+
+    public byte[] getByteBalance() {
+        return this.balance;
+    }
+
+    public byte[] getByteLink() {
+        return this.link;
+    }
+
+    public byte[] getByteSignature() {
+        return this.signature;
     }
 }
