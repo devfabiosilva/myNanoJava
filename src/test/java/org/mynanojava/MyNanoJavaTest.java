@@ -3,12 +3,17 @@ package org.mynanojava;
 import org.junit.Before;
 import org.junit.Test;
 import org.mynanojava.blockchain.NanoBlock;
+import org.mynanojava.enums.NanoAccountEnum;
 import org.mynanojava.enums.NanoJavaEnumPrefix;
+
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_SEND;
+import static org.mynanojava.enums.NanoAccountEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.NANO_BALANCE_REAL;
+import static org.mynanojava.enums.NanoJavaEnumPrefix.REP_XRB;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.SENDER_XRB;
 import static org.mynanojava.enums.NanoJavaEnumValueToSendOrReceive.NANO_VALUE_TO_SEND_OR_RECEIVE_REAL;
 import static org.mynanojava.enums.NanoJavaEnumWorkerFeeType.NANO_FEE_REAL;
@@ -91,7 +96,7 @@ public class MyNanoJavaTest {
                 "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
                 "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
                 "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
-                "1.8",
+                "1.88",
                 NANO_BALANCE_REAL.getValue(),
                 "1.0",
                 NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
@@ -102,6 +107,10 @@ public class MyNanoJavaTest {
         assertNotEquals(null, nanoBlock.getByteAccount());
         assertNotEquals(null, nanoBlock.getBytePrevious());
         assertEquals(true, nanoBlock.hasXRBPrefix(SENDER_XRB));
-
+        assertEquals(false, nanoBlock.hasXRBPrefix(REP_XRB));
+        assertEquals("24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8", nanoBlock.getLink(HEX_ACCOUNT));
+        assertEquals("xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54", nanoBlock.getAccount(PRE_DEFINED));
+        assertEquals("nano_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54", nanoBlock.getAccount(NANO_PREFIX));
+        assertEquals("40FB7380250F36790BF16747EC8DD46BE33F69AAB6F64A1C883D5A7128EAB80D", nanoBlock.getAccount(HEX_ACCOUNT));
     }
 }

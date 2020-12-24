@@ -742,6 +742,68 @@ Java_org_mynanojava_MyNanoJava_nanoPoW_EXIT1:
    return (jlong)result;
 }
 
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    byteToWallet
+ * Signature: ([BI)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_byteToWallet(JNIEnv *env, jobject thisObj, jbyteArray wallet, jint type)
+{
+   int err;
+   jstring res;
+   const char *p, *prefix;
+   jbyte *c_byte_array;
+   jsize jSize;
+
+   if (!wallet) {
+      throwError(env, "byteToWallet: Missing wallet");
+      return NULL;
+   }
+
+   if (type==3)
+      prefix=NULL;
+   else if (type==1)
+      prefix=NANO_PREFIX;
+   else if (type==2)
+      prefix=XRB_PREFIX;
+   else {
+      throwError(env, "byteToWallet: Wrong wallet type");
+      return NULL;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, wallet, JNI_FALSE))) {
+      throwError(env, "byteToWallet: Unable to get wallet");
+      return NULL;
+   }
+
+   res=NULL;
+
+   if ((jSize=(*env)->GetArrayLength(env, wallet))!=32) {
+      sprintf(msg, "byteToWallet: Wrong wallet size %d", (int)jSize);
+      throwError(env, msg);
+      goto Java_org_mynanojava_blockchain_NanoBlock_byteToWallet_EXIT1;
+   }
+
+   p=memcpy(msg+128, c_byte_array, 32);
+
+   if (prefix) {
+      if ((err=pk_to_wallet(msg, (char *)prefix, (uint8_t *)p))) {
+         sprintf(msg, MY_NANO_EMBEDDED_ERROR, "pk_to_wallet", err);
+         throwError(env, msg);
+         goto Java_org_mynanojava_blockchain_NanoBlock_byteToWallet_EXIT1;
+      }
+   } else
+      fhex2strv2(msg, (const void *)p, 32, 1);
+
+   if (!(res = (*env)->NewStringUTF(env, msg)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+Java_org_mynanojava_blockchain_NanoBlock_byteToWallet_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, wallet, c_byte_array, JNI_ABORT);
+
+   return res;
+}
+
 jint throwError(JNIEnv *env, char *message)
 {
    jclass exClass;
