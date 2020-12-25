@@ -8,6 +8,11 @@
 #define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
 #define NANO_BLOCK_CLASS_PATH "org/mynanojava/blockchain/NanoBlock"
 #define NANO_JAVA_GET_INIT_METHOD(class) (*env)->GetMethodID(env, class, "<init>", "()V")
+#define NANO_JAVA_BYTE_ARRAY_TYPE "[B"
+#define NANO_JAVA_LONG_TYPE "J"
+#define NANO_JAVA_INT_TYPE "I"
+#define CANT_FIND_NANO_BLOCK_ERROR "%s: Can't find class org.mynanojava.blockchain.NanoBlock"
+
 static char msg[768];
 
 void gen_rand_no_entropy_util(void *output, size_t output_len)
@@ -439,7 +444,7 @@ int setByteArrayFieldId_util(
    jfieldID field;
    jbyteArray byte_array;
 
-   if (!(field=(*env)->GetFieldID(env, class, fieldId, "[B")))
+   if (!(field=(*env)->GetFieldID(env, class, fieldId, NANO_JAVA_BYTE_ARRAY_TYPE)))
       return -40;
 
    if (!(byte_array=(*env)->NewByteArray(env, c_byte_array_sz)))
@@ -448,6 +453,83 @@ int setByteArrayFieldId_util(
    (*env)->SetByteArrayRegion(env, byte_array, 0, c_byte_array_sz, (const jbyte *)c_byte_array);
    (*env)->SetObjectField(env, thisObject, field, byte_array);
    (*env)->DeleteLocalRef(env, byte_array);
+
+   return 0;
+}
+
+int getByteArrayFieldId_util(
+   uint8_t **c_byte_array,
+   size_t *c_byte_array_sz,
+   jobject *fieldObj,
+   JNIEnv *env,
+   jobject thisObject,
+   jclass class,
+   const char *fieldId
+)
+{
+
+   jfieldID field;
+
+   *c_byte_array=NULL;
+//   *c_byte_array_sz=0;
+
+   if (!(field=(*env)->GetFieldID(env, class, fieldId, NANO_JAVA_BYTE_ARRAY_TYPE)))
+      return -80;
+
+   if (!(*fieldObj=(*env)->GetObjectField(env, thisObject, field)))
+      return -81;
+
+   if (!(*c_byte_array=(*env)->GetByteArrayElements(env, *fieldObj, JNI_FALSE)))
+      return -82;
+
+   *c_byte_array_sz=(size_t)(*env)->GetArrayLength(env, *fieldObj);
+
+   if ((*env)->ExceptionCheck(env))
+      return -83;
+
+   return 0;
+}
+
+int getLongFieldUtil(
+   jlong *long_value,
+   JNIEnv *env,
+   jobject thisObject,
+   jclass class,
+   const char *fieldId
+)
+{
+
+   jfieldID field;
+
+   if (!(field=(*env)->GetFieldID(env, class, fieldId, NANO_JAVA_LONG_TYPE)))
+      return -90;
+
+   *long_value=(*env)->GetLongField(env, thisObject, field);
+
+   if ((*env)->ExceptionCheck(env))
+      return -91;
+
+   return 0;
+}
+
+int getIntFieldUtil(
+   jint *int_value,
+   JNIEnv *env,
+   jobject thisObject,
+   jclass class,
+   const char *fieldId
+)
+{
+
+   jfieldID field;
+
+   if (!(field=(*env)->GetFieldID(env, class, fieldId, NANO_JAVA_INT_TYPE)))
+      return -95;
+
+   *int_value=(*env)->GetIntField(env, thisObject, field);
+
+   if ((*env)->ExceptionCheck(env))
+      return -96;
 
    return 0;
 }
@@ -491,14 +573,14 @@ int setNanoBlockToJVM_util(
    jfieldID field;
    jbyteArray byte_array;
 
-   if (!(field=(*env)->GetFieldID(env, thisClass, NANO_BLK_WORK, "J"))) {
+   if (!(field=(*env)->GetFieldID(env, thisClass, NANO_BLK_WORK, NANO_JAVA_LONG_TYPE))) {
       sprintf(msg, NANO_CREATE_BLOCK_ERROR_MSG, NANO_BLK_WORK, err=-42);
       return err;
    }
 
    (*env)->SetLongField(env, thisObject, field, (jlong)nano_block->work);
 
-   if (!(field=(*env)->GetFieldID(env, thisClass, NANO_BLK_PREFIXES, "I"))) {
+   if (!(field=(*env)->GetFieldID(env, thisClass, NANO_BLK_PREFIXES, NANO_JAVA_INT_TYPE))) {
       sprintf(msg, NANO_CREATE_BLOCK_ERROR_MSG, NANO_BLK_PREFIXES, err=-43);
       return err;
    }
@@ -629,7 +711,8 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    }
 
    if (!(jNanoBlockClass=(*env)->FindClass(env, NANO_BLOCK_CLASS_PATH))) {
-      throwError(env, "nanoCreateBlock: Can't find class org.mynanojava.blockchain.NanoBlock");
+      sprintf(msg, CANT_FIND_NANO_BLOCK_ERROR, "nanoCreateBlock");
+      throwError(env, msg);
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
    }
 
@@ -678,6 +761,97 @@ Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT1:
    return jResult;
 
 }
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    nanoBlockToJSON
+ * Signature: (Lorg/mynanojava/blockchain/NanoBlock;)Ljava/lang/String;
+ */
+
+JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_nanoBlockToJSON(JNIEnv *env, jobject thisObj, jobject nanoBlock)
+{
+   int err;
+   jstring res;
+   jclass jNanoBlockClass;
+   uint8_t *c_byte_array;
+   size_t c_byte_array_sz;
+   jobject fieldObj;
+   NANO_BLK_TO_JVM *jvm_blk;
+   F_BLOCK_TRANSFER *nano_block;
+   const char *field;
+   jfieldID fieldId;
+
+   if (!nanoBlock) {
+      throwError(env, "nanoBlockToJSON: Missing NanoBlock object");
+      return NULL;
+   }
+
+   if (!(jNanoBlockClass=(*env)->FindClass(env, NANO_BLOCK_CLASS_PATH))) {
+      sprintf(msg, CANT_FIND_NANO_BLOCK_ERROR, "nanoBlockToJSON");
+      throwError(env, msg);
+      return NULL;
+   }
+
+   if (!(nano_block=malloc(sizeof(F_BLOCK_TRANSFER)))) {
+      throwError(env, "nanoBlockToJSON: Error when creating Nano Block");
+      return NULL;
+   }
+
+   jvm_blk=blk_to_jvm;
+   res=NULL;
+
+   while (field=jvm_blk->key) {
+      if (!(err=getByteArrayFieldId_util(&c_byte_array, &c_byte_array_sz, &fieldObj, env, nanoBlock, jNanoBlockClass, field)))
+         (c_byte_array_sz==jvm_blk->size)?(void)(memcpy(((uint8_t *)nano_block)+jvm_blk->offset, c_byte_array, c_byte_array_sz)):(void)(err=31);
+
+      if (c_byte_array)
+         (*env)->ReleaseByteArrayElements(env, fieldObj, c_byte_array, JNI_ABORT);
+
+      if (err) {
+
+         (err>0)?
+            sprintf(msg, "Wrong field[%s] size. Expected size = %lu and returned size = %lu", jvm_blk->key, jvm_blk->size, c_byte_array_sz):
+            sprintf(msg, MY_NANO_EMBEDDED_ERROR, "getByteArrayFieldId_util", err);
+
+         throwError(env, msg);
+
+         goto Java_org_mynanojava_blockchain_NanoBlock_nanoBlockToJSON_EXIT1;
+      }
+
+      jvm_blk++;
+   }
+
+   if ((err=getLongFieldUtil((jlong *)&nano_block->work, env, nanoBlock, jNanoBlockClass, NANO_BLK_WORK))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "getLongFieldUtil @ nanoBlockToJSON", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_blockchain_NanoBlock_nanoBlockToJSON_EXIT1;
+   }
+
+   if ((err=getIntFieldUtil((jint *)&nano_block->prefixes, env, nanoBlock, jNanoBlockClass, NANO_BLK_PREFIXES))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "getIntFieldUtil @ nanoBlockToJSON", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_blockchain_NanoBlock_nanoBlockToJSON_EXIT1;
+   }
+
+   memset(nano_block->preamble, 0, 31);
+   nano_block->preamble[31]=0x06;
+
+   if ((err=f_nano_block_to_json(msg, NULL, sizeof(msg), nano_block))) {
+      sprintf(msg, MY_NANO_EMBEDDED_ERROR, "f_nano_block_to_json @ nanoBlockToJSON", err);
+      throwError(env, msg);
+      goto Java_org_mynanojava_blockchain_NanoBlock_nanoBlockToJSON_EXIT1;
+   }
+
+   if (!(res=(*env)->NewStringUTF(env, msg)))
+      throwError(env, "nanoBlockToJSON: Error when parse Nano block to JSON");
+
+Java_org_mynanojava_blockchain_NanoBlock_nanoBlockToJSON_EXIT1:
+   memset(nano_block, 0, sizeof(F_BLOCK_TRANSFER));
+   free(nano_block);
+
+   return res;
+}
+
 
 JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobject thisObj, jstring jHash, jobject jThreshold, jint jNumberOfThreads)
 {

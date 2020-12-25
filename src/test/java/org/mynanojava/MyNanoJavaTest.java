@@ -3,10 +3,6 @@ package org.mynanojava;
 import org.junit.Before;
 import org.junit.Test;
 import org.mynanojava.blockchain.NanoBlock;
-import org.mynanojava.enums.NanoAccountEnum;
-import org.mynanojava.enums.NanoJavaEnumPrefix;
-
-import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_SEND;
@@ -112,5 +108,6 @@ public class MyNanoJavaTest {
         assertEquals("xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54", nanoBlock.getAccount(PRE_DEFINED));
         assertEquals("nano_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54", nanoBlock.getAccount(NANO_PREFIX));
         assertEquals("40FB7380250F36790BF16747EC8DD46BE33F69AAB6F64A1C883D5A7128EAB80D", nanoBlock.getAccount(HEX_ACCOUNT));
+        System.out.println(nanoBlock.toJson());
     }
 }

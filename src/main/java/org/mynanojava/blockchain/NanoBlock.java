@@ -17,11 +17,12 @@ public class NanoBlock {
     private long work = 0L;
     private int prefixes = 0;
 
-    NanoBlock() {
+    private NanoBlock() {
 
     }
 
     private native String byteToWallet(byte[] wallet, int type) throws Exception;
+    public static native String nanoBlockToJSON(NanoBlock nanoBlock) throws Exception;
 
     public String getAccount(NanoAccountEnum accountType) throws Exception {
         int type = accountType.getValue();
@@ -107,5 +108,9 @@ public class NanoBlock {
 
     public byte[] getByteSignature() {
         return this.signature;
+    }
+
+    public String toJson() throws Exception {
+        return nanoBlockToJSON(this);
     }
 }
