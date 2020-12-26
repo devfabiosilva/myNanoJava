@@ -140,11 +140,6 @@ JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_MyNanoJava_nano_1create_1block(
       return NULL;
    }
 
-   if (!previous) {
-      throwError(env, "Missing previous");
-      return NULL;
-   }
-
    if (!representative) {
       throwError(env, "Missing representative");
       return NULL;
@@ -172,10 +167,13 @@ JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_MyNanoJava_nano_1create_1block(
 
    outByteArray=NULL;
 
-   if (!(c_previous=(*env)->GetStringUTFChars(env, previous, NULL))) {
-      throwError(env, "Get UTF previous error");
-      goto Java_org_mynanojava_MyNanoJava_nano_1create_1block_EXIT1;
-   }
+   if (previous) {
+      if (!(c_previous=(*env)->GetStringUTFChars(env, previous, NULL))) {
+         throwError(env, "Get UTF previous error");
+         goto Java_org_mynanojava_MyNanoJava_nano_1create_1block_EXIT1;
+      }
+   } else
+      c_previous=NULL;
 
    if (!(c_representative=(*env)->GetStringUTFChars(env, representative, NULL))) {
       throwError(env, "Get UTF representative error");
@@ -246,7 +244,8 @@ Java_org_mynanojava_MyNanoJava_nano_1create_1block_EXIT3:
    (*env)->ReleaseStringUTFChars(env, representative, c_representative);
 
 Java_org_mynanojava_MyNanoJava_nano_1create_1block_EXIT2:
-   (*env)->ReleaseStringUTFChars(env, previous, c_previous);
+   if (c_previous)
+      (*env)->ReleaseStringUTFChars(env, previous, c_previous);
 
 Java_org_mynanojava_MyNanoJava_nano_1create_1block_EXIT1:
    (*env)->ReleaseStringUTFChars(env, account, c_account);
@@ -628,11 +627,6 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
       return NULL;
    }
 
-   if (!previous) {
-      throwError(env, "nanoCreateBlock: Missing previous");
-      return NULL;
-   }
-
    if (!representative) {
       throwError(env, "nanoCreateBlock: Missing representative");
       return NULL;
@@ -660,10 +654,13 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
 
    jResult=NULL;
 
-   if (!(c_previous=(*env)->GetStringUTFChars(env, previous, NULL))) {
-      throwError(env, "nanoCreateBlock: Get UTF previous error");
-      goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT1;
-   }
+   if (previous) {
+      if (!(c_previous=(*env)->GetStringUTFChars(env, previous, NULL))) {
+         throwError(env, "nanoCreateBlock: Get UTF previous error");
+         goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT1;
+      }
+   } else
+      c_previous=NULL;
 
    if (!(c_representative=(*env)->GetStringUTFChars(env, representative, NULL))) {
       throwError(env, "nanoCreateBlock: Get UTF representative error");
@@ -753,7 +750,8 @@ Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT3:
    (*env)->ReleaseStringUTFChars(env, representative, c_representative);
 
 Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT2:
-   (*env)->ReleaseStringUTFChars(env, previous, c_previous);
+   if (c_previous)
+      (*env)->ReleaseStringUTFChars(env, previous, c_previous);
 
 Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT1:
    (*env)->ReleaseStringUTFChars(env, account, c_account);
