@@ -3,10 +3,11 @@ package org.mynanojava;
 import org.junit.Before;
 import org.junit.Test;
 import org.mynanojava.blockchain.NanoBlock;
+import org.mynanojava.blockchain.P2PoWBlock;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_RECEIVE;
-import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_SEND;
+import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_RECEIVE;
+import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_SEND;
 import static org.mynanojava.enums.NanoAccountEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.NANO_BALANCE_REAL;
@@ -217,5 +218,61 @@ public class MyNanoJavaTest {
         byte[] nanoBlockByte = myNanoJava.nanoBlockToByte(nanoBlock);
         assertNotEquals(null, nanoBlockByte);
         assertEquals(249, nanoBlockByte.length);
+    }
+
+    @Test
+    public void creatingP2PoWBlockThroughNanoBlockClass() throws Exception {
+        P2PoWBlock p2PoWBlock;
+        NanoBlock nanoBlock = myNanoJava.nanoCreateBlock(
+                "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
+                "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "1.88",
+                NANO_BALANCE_REAL.getValue(),
+                "1.0",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_SEND.getValue()
+        );
+        assertNotEquals(null, nanoBlock);
+        assertNotEquals(null, nanoBlock.getByteAccount());
+        assertNotEquals(null, nanoBlock.getBytePrevious());
+        assertEquals(true, nanoBlock.hasXRBPrefix(SENDER_XRB));
+        assertEquals(false, nanoBlock.hasXRBPrefix(REP_XRB));
+
+        p2PoWBlock = new P2PoWBlock(nanoBlock, "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "0.7", NANO_FEE_REAL.getValue(), null);
+        assertNotEquals(null, p2PoWBlock);
+        assertEquals(nanoBlock.getAccount(PRE_DEFINED), p2PoWBlock.getRewardBlock().getAccount(PRE_DEFINED));
+        assertEquals(p2PoWBlock.getUserBlock().getAccount(PRE_DEFINED), p2PoWBlock.getRewardBlock().getAccount(PRE_DEFINED));
+        assertEquals(p2PoWBlock.getUserBlock().getRepresentative(PRE_DEFINED), p2PoWBlock.getRewardBlock().getRepresentative(PRE_DEFINED));
+        assertEquals(498, p2PoWBlock.getByteP2PoWBlock().length);
+        System.out.println("\nJSON => \n"+p2PoWBlock.toJson());
+    }
+
+    @Test
+    public void creatingP2PoWBlockThroughNativeByte() throws Exception {
+        P2PoWBlock p2PoWBlock;
+        byte[] nanoBlock = myNanoJava.nano_create_block(
+                "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
+                "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "1.88",
+                NANO_BALANCE_REAL.getValue(),
+                "1.0",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_SEND.getValue()
+        );
+        assertNotEquals(null, nanoBlock);
+        assertEquals(249, nanoBlock.length);
+
+        p2PoWBlock = new P2PoWBlock(nanoBlock, "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "0.7", NANO_FEE_REAL.getValue(), null);
+        assertNotEquals(null, p2PoWBlock);
+        assertEquals(p2PoWBlock.getUserBlock().getAccount(PRE_DEFINED), p2PoWBlock.getRewardBlock().getAccount(PRE_DEFINED));
+        assertEquals(p2PoWBlock.getUserBlock().getRepresentative(PRE_DEFINED), p2PoWBlock.getRewardBlock().getRepresentative(PRE_DEFINED));
+        assertEquals(498, p2PoWBlock.getByteP2PoWBlock().length);
+        System.out.println("\nJSON => \n"+p2PoWBlock.toJson());
     }
 }

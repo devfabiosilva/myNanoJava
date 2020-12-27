@@ -616,7 +616,6 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    jobject jResult;
    jclass jNanoBlockClass;
    jmethodID methodId;
-   jfieldID fieldId;
    jbyte *c_byte_array;
    jbyteArray byte_array;
    uint32_t types;
@@ -732,6 +731,7 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
 
 Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT8:
    (*env)->DeleteLocalRef(env, jResult);
+   jResult=NULL;
 
 Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7:
    memset(nano_block, 0, sizeof(F_BLOCK_TRANSFER));
@@ -1008,6 +1008,71 @@ Java_org_mynanojava_blockchain_NanoBlock_byteToWallet_EXIT1:
    (*env)->ReleaseByteArrayElements(env, wallet, c_byte_array, JNI_ABORT);
 
    return res;
+}
+
+JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_byteToNanoBlock(JNIEnv *env, jobject thisObj, jbyteArray nanoBlock, jint blockNumber)
+{
+   int err;
+   jbyte *c_byte_array, *p;
+   size_t block_offset;
+   jobject jResult;
+   jclass jNanoBlockClass;
+   jmethodID methodId;
+
+   if (!nanoBlock) {
+      throwError(env, "byteToNanoBlock: Missing Java byte array Nano block");
+      return NULL;
+   }
+
+   if (blockNumber<0) {
+      throwError(env, "byteToNanoBlock: Invalid block number");
+      return NULL;
+   }
+
+   if (((block_offset=blockNumber*sizeof(F_BLOCK_TRANSFER))+sizeof(F_BLOCK_TRANSFER))>(*env)->GetArrayLength(env, nanoBlock)) {
+      throwError(env, "byteToNanoBlock: Wrong Java Byte array size or invalid block number");
+      return NULL;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, nanoBlock, JNI_FALSE))) {
+      throwError(env, "byteToNanoBlock: Unable to get Nano block in Java Byte Array");
+      return NULL;
+   }
+
+   jResult=NULL;
+
+   if (!f_nano_is_valid_block((F_BLOCK_TRANSFER *)(p=c_byte_array+block_offset))) {
+      sprintf(msg, "byteToNanoBlock: Block number %d is invalid in Java Byte Array", (int)blockNumber);
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_byteToNanoBlock_EXIT1;
+   }
+
+   if (!(jNanoBlockClass=(*env)->FindClass(env, NANO_BLOCK_CLASS_PATH))) {
+      sprintf(msg, CANT_FIND_NANO_BLOCK_ERROR, "byteToNanoBlock");
+      throwError(env, msg);
+      goto Java_org_mynanojava_MyNanoJava_byteToNanoBlock_EXIT1;
+   }
+
+   if (!(methodId=NANO_JAVA_GET_INIT_METHOD(jNanoBlockClass))) {
+      throwError(env, "byteToNanoBlock: Can't Init new class NanoBlock");
+      goto Java_org_mynanojava_MyNanoJava_byteToNanoBlock_EXIT1;
+   }
+
+   if (!(jResult=(*env)->NewObject(env, jNanoBlockClass, methodId))) {
+      throwError(env, "byteToNanoBlock: Can't create NanoBlock Object");
+      goto Java_org_mynanojava_MyNanoJava_byteToNanoBlock_EXIT1;
+   }
+
+   if ((err=setNanoBlockToJVM_util(env, jResult, jNanoBlockClass, (F_BLOCK_TRANSFER *)p))) {
+      sprintf(msg, "byteToNanoBlock: error when set C Nano Block to Java NanoBlock class %d", err);
+      throwError(env, msg);
+      (*env)->DeleteLocalRef(env, jResult);
+      jResult=NULL;
+   }
+
+Java_org_mynanojava_MyNanoJava_byteToNanoBlock_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, JNI_ABORT);
+   return jResult;
 }
 
 jint throwError(JNIEnv *env, char *message)
