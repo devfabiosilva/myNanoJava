@@ -9,7 +9,6 @@ import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_RECEIVE;
 import static org.mynanojava.enums.ManoJavaEnumDirection.VALUE_TO_SEND;
 import static org.mynanojava.enums.NanoAccountEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
-import static org.mynanojava.enums.NanoJavaEnumBalanceType.NANO_BALANCE_RAW;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.NANO_BALANCE_REAL;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.REP_XRB;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.SENDER_XRB;
@@ -199,6 +198,24 @@ public class MyNanoJavaTest {
         } catch (Exception e) {
             fail(e.getMessage());
         }
+    }
 
+    @Test
+    public void nanoBlockToByteTest() throws Exception {
+        NanoBlock nanoBlock = myNanoJava.nanoCreateBlock(
+                "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
+                null,
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "0",
+                NANO_BALANCE_REAL.getValue(),
+                "1.0",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_RECEIVE.getValue()
+        );
+        assertNotEquals(null, nanoBlock);
+        byte[] nanoBlockByte = myNanoJava.nanoBlockToByte(nanoBlock);
+        assertNotEquals(null, nanoBlockByte);
+        assertEquals(249, nanoBlockByte.length);
     }
 }

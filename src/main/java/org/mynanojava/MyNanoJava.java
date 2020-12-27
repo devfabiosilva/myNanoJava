@@ -44,6 +44,10 @@ public class MyNanoJava {
     ) throws Exception;
     public native String p2powToJson(byte[] p2powBlock) throws Exception;
     public native long nanoPoW(String hash, Long threshold, int numberOfThreads) throws Exception;
+    public native byte[] nanoBlockToByte(NanoBlock nanoBlock) throws Exception;
+    public native NanoBlock byteToNanoBlock(byte[] nanoBlock) throws Exception;
+
+
     /*static public void main(String args[]) throws Exception {
         MyNanoJava myNanoJava = new MyNanoJava();
         System.out.println(myNanoJava.nanoPoW("", Long.valueOf(1), 1)+"\n");

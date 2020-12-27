@@ -21,7 +21,7 @@ public class NanoBlock {
 
     }
 
-    private native String byteToWallet(byte[] wallet, int type) throws Exception;
+    public static native String byteToWallet(byte[] wallet, int type) throws Exception;
     public static native String nanoBlockToJSON(NanoBlock nanoBlock) throws Exception;
 
     public String getAccount(NanoAccountEnum accountType) throws Exception {
