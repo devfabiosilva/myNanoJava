@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
+import org.mynanojava.exceptions.NanoBlockException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_RECEIVE;
@@ -16,15 +17,28 @@ import static org.mynanojava.enums.NanoJavaEnumPrefix.SENDER_XRB;
 import static org.mynanojava.enums.NanoJavaEnumValueToSendOrReceive.NANO_VALUE_TO_SEND_OR_RECEIVE_REAL;
 import static org.mynanojava.enums.NanoJavaEnumWorkerFeeType.NANO_FEE_REAL;
 
+/**
+ * <p>MyNanoJavaTest class.</p>
+ *
+ * @author Fábio Pereira da Silva
+ * @version $Id: $Id
+ * @since 0.1.0
+ */
 public class MyNanoJavaTest {
 
     private MyNanoJava myNanoJava;
 
+    /**
+     * <p>initMyNanoJava.</p>
+     */
     @Before
     public void initMyNanoJava() {
         myNanoJava = new MyNanoJava();
     }
 
+    /**
+     * <p>showingLicense.</p>
+     */
     @Test
     public void showingLicense() {
         System.out.println("Testing license method ...");
@@ -33,6 +47,11 @@ public class MyNanoJavaTest {
         assertNotEquals("", licenseStr);
     }
 
+    /**
+     * <p>addTwoBigNumbers.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     @Test
     public void addTwoBigNumbers() throws Exception {
         System.out.println("Add two big numbers ...");
@@ -45,6 +64,11 @@ public class MyNanoJavaTest {
                         NANO_RES_REAL.getValue()));
     }
 
+    /**
+     * <p>creatingNanoBlock.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     @Test
     public void creatingNanoBlock() throws Exception {
         System.out.println("Creating Nano Block ...");
@@ -61,6 +85,11 @@ public class MyNanoJavaTest {
         assertEquals(249, block.length);
     }
 
+    /**
+     * <p>parseNanoBlockToJSON.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     @Test
     public void parseNanoBlockToJSON() throws Exception {
         System.out.println("Creating Nano Block ...");
@@ -83,13 +112,23 @@ public class MyNanoJavaTest {
         System.out.println(myNanoJava.p2powToJson(p2pow));
     }
 
+    /**
+     * <p>testNanoPoW.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     @Test
     public void testNanoPoW() throws Exception {
-        System.out.println("\n"+myNanoJava.nanoPoW("83170d1119c054cefcd3d2f2192b2e6e93b0a7664b934ef599ab11ceae5b482b", Long.valueOf(0xff00000000000000L), 4)+"\n");
+        System.out.println("\n"+myNanoJava.nanoPoW("83170d1119c054cefcd3d2f2192b2e6e93b0a7664b934ef599ab11ceae5b482b", 0xff00000000000000L, 4)+"\n");
     }
 
+    /**
+     * <p>testMyNanoBlockClass.</p>
+     *
+     * @throws java.lang.Throwable if any.
+     */
     @Test
-    public void testMyNanoBlockClass() throws Exception{
+    public void testMyNanoBlockClass() throws Throwable {
         NanoBlock nanoBlock = myNanoJava.nanoCreateBlock(
                 "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
                 "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
@@ -104,8 +143,8 @@ public class MyNanoJavaTest {
         assertNotEquals(null, nanoBlock);
         assertNotEquals(null, nanoBlock.getByteAccount());
         assertNotEquals(null, nanoBlock.getBytePrevious());
-        assertEquals(true, nanoBlock.hasXRBPrefix(SENDER_XRB));
-        assertEquals(false, nanoBlock.hasXRBPrefix(REP_XRB));
+        assertTrue(nanoBlock.hasXRBPrefix(SENDER_XRB));
+        assertFalse(nanoBlock.hasXRBPrefix(REP_XRB));
         assertEquals("24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8", nanoBlock.getLink(HEX_ACCOUNT));
         assertEquals("xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54", nanoBlock.getAccount(PRE_DEFINED));
         assertEquals("nano_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54", nanoBlock.getAccount(NANO_PREFIX));
@@ -113,6 +152,9 @@ public class MyNanoJavaTest {
         System.out.println(nanoBlock.toJson());
     }
 
+    /**
+     * <p>testGenesisBlockWithException.</p>
+     */
     @Test
     public void testGenesisBlockWithException() {
         NanoBlock nanoBlock;
@@ -130,10 +172,10 @@ public class MyNanoJavaTest {
                     VALUE_TO_RECEIVE.getValue()
             );
             fail("Failed pass 1");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             assertEquals("nanoCreateBlock: myNanoEmbedded C library error in function \"nano_create_block_dynamic\" 8003",
             e.getMessage());
-            System.out.printf(e.getMessage()+"\n");
+            System.out.println(e.getMessage()+"\n");
         }
 //Can't send empty amount
         try {
@@ -149,10 +191,10 @@ public class MyNanoJavaTest {
                     VALUE_TO_SEND.getValue()
             );
             fail("Failed pass 2");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             assertEquals("nanoCreateBlock: myNanoEmbedded C library error in function \"nano_create_block_dynamic\" 8004",
                     e.getMessage());
-            System.out.printf(e.getMessage()+"\n");
+            System.out.println(e.getMessage()+"\n");
         }
 
         //Does not make sense send 0.0 amount
@@ -169,13 +211,16 @@ public class MyNanoJavaTest {
                     VALUE_TO_RECEIVE.getValue()
             );
             fail("Failed pass 3");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             assertEquals("nanoCreateBlock: myNanoEmbedded C library error in function \"nano_create_block_dynamic\" 8016",
                     e.getMessage());
-            System.out.printf(e.getMessage()+"\n");
+            System.out.println(e.getMessage()+"\n");
         }
     }
 
+    /**
+     * <p>testGenesisBlock.</p>
+     */
     @Test
     public void testGenesisBlock() {
         NanoBlock nanoBlock;
@@ -193,16 +238,21 @@ public class MyNanoJavaTest {
                     VALUE_TO_RECEIVE.getValue()
             );
             assertEquals(nanoBlock.getAccount(HEX_ACCOUNT), nanoBlock.getPreviousBlock());
-            System.out.printf(nanoBlock.getAccount(HEX_ACCOUNT));
-            System.out.printf("\n"+ nanoBlock.toJson() +"\n");
+            System.out.println(nanoBlock.getAccount(HEX_ACCOUNT));
+            System.out.println("\n"+ nanoBlock.toJson() +"\n");
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             fail(e.getMessage());
         }
     }
 
+    /**
+     * <p>nanoBlockToByteTest.</p>
+     *
+     * @throws java.lang.Throwable if any.
+     */
     @Test
-    public void nanoBlockToByteTest() throws Exception {
+    public void nanoBlockToByteTest() throws Throwable {
         NanoBlock nanoBlock = myNanoJava.nanoCreateBlock(
                 "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
                 null,
@@ -220,8 +270,13 @@ public class MyNanoJavaTest {
         assertEquals(249, nanoBlockByte.length);
     }
 
+    /**
+     * <p>creatingP2PoWBlockThroughNanoBlockClass.</p>
+     *
+     * @throws java.lang.Throwable if any.
+     */
     @Test
-    public void creatingP2PoWBlockThroughNanoBlockClass() throws Exception {
+    public void creatingP2PoWBlockThroughNanoBlockClass() throws Throwable {
         P2PoWBlock p2PoWBlock;
         NanoBlock nanoBlock = myNanoJava.nanoCreateBlock(
                 "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
@@ -237,8 +292,8 @@ public class MyNanoJavaTest {
         assertNotEquals(null, nanoBlock);
         assertNotEquals(null, nanoBlock.getByteAccount());
         assertNotEquals(null, nanoBlock.getBytePrevious());
-        assertEquals(true, nanoBlock.hasXRBPrefix(SENDER_XRB));
-        assertEquals(false, nanoBlock.hasXRBPrefix(REP_XRB));
+        assertTrue( nanoBlock.hasXRBPrefix(SENDER_XRB));
+        assertFalse( nanoBlock.hasXRBPrefix(REP_XRB));
 
         p2PoWBlock = new P2PoWBlock(nanoBlock, "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
                 "0.7", NANO_FEE_REAL.getValue(), null);
@@ -250,6 +305,11 @@ public class MyNanoJavaTest {
         System.out.println("\nJSON => \n"+p2PoWBlock.toJson());
     }
 
+    /**
+     * <p>creatingP2PoWBlockThroughNativeByte.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     @Test
     public void creatingP2PoWBlockThroughNativeByte() throws Exception {
         P2PoWBlock p2PoWBlock;
@@ -274,5 +334,49 @@ public class MyNanoJavaTest {
         assertEquals(p2PoWBlock.getUserBlock().getRepresentative(PRE_DEFINED), p2PoWBlock.getRewardBlock().getRepresentative(PRE_DEFINED));
         assertEquals(498, p2PoWBlock.getByteP2PoWBlock().length);
         System.out.println("\nJSON => \n"+p2PoWBlock.toJson());
+    }
+
+    /**
+     * <p>newTrowableMethod.</p>
+     */
+    @Test
+    public void newTrowableMethod() {
+        NanoBlock nanoBlock;
+        try {
+            nanoBlock = myNanoJava.nanoCreateBlock(
+                    null,
+                    null,
+                    "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                    "0",
+                    NANO_BALANCE_REAL.getValue(),
+                    "1.0",
+                    NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                    "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                    VALUE_TO_RECEIVE.getValue()
+            );
+            fail("Should occur an exception or throwable");
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoBlockException);
+            assertEquals("nanoCreateBlock: Missing account", e.getMessage());
+            assertEquals(20000, ((NanoBlockException)e).getError());
+        }
+
+        try {
+            nanoBlock = myNanoJava.nanoCreateBlock(
+                    "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
+                    "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                    "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                    "1.88",
+                    NANO_BALANCE_REAL.getValue(),
+                    "1.0",
+                    NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                    "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                    VALUE_TO_SEND.getValue()-1000
+            );
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoBlockException);
+            assertEquals(8017, ((NanoBlockException) e).getError());
+            assertEquals("nanoCreateBlock: myNanoEmbedded C library error in function \"nano_create_block_dynamic\" 8017", e.getMessage());
+        }
     }
 }

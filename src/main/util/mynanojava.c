@@ -3,7 +3,10 @@
 //java -Djava.library.path=. -jar
 ////https://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //https://developer.android.com/training/articles/perf-jni?hl=pt-br
-#define EMPTY_STR ""
+jint throwNewException(JNIEnv *, const char *, const char *, int);
+#define NANO_JAVA_LANG_EXCEPTION_CLASS "java/lang/Exception"
+#define NANO_BLOCK_EXCEPTION_CLASS "org/mynanojava/exceptions/NanoBlockException"
+#define throwError(env, msg) throwNewException(env, NANO_JAVA_LANG_EXCEPTION_CLASS, msg, 0)
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
 #define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
 #define NANO_BLOCK_CLASS_PATH "org/mynanojava/blockchain/NanoBlock"
@@ -50,8 +53,6 @@ int nano_java_raw128_str_to_bin_util(uint8_t *dest, const char *str)
 
    return f_str_to_hex(dest, (char *)str);
 }
-
-jint throwError(JNIEnv *, char *);
 
 JNIEXPORT jstring JNICALL Java_org_mynanojava_MyNanoJava_license(JNIEnv *env, jobject thisObject)
 {
@@ -470,7 +471,6 @@ int getByteArrayFieldId_util(
    jfieldID field;
 
    *c_byte_array=NULL;
-//   *c_byte_array_sz=0;
 
    if (!(field=(*env)->GetFieldID(env, class, fieldId, NANO_JAVA_BYTE_ARRAY_TYPE)))
       return -80;
@@ -604,6 +604,14 @@ int setNanoBlockToJVM_util(
  * Method:    nanoCreateBlock
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;ILjava/lang/String;I)Lorg/mynanojava/blockchain/NanoBlock;
  */
+#define NANO_BLOCK_EXCEPTION_MISSING_BLOCK_ERR 20000
+#define NANO_BLOCK_EXCEPTION_MISSING_REPRESENTATIVE_ERR 20001
+#define NANO_BLOCK_EXCEPTION_MISSING_BALANCE_ERR 20002
+#define NANO_BLOCK_EXCEPTION_VAL_SEND_REC_ERR 20003
+#define NANO_BLOCK_EXCEPTION_MISSING_LINK_ERR 20004
+#define NANO_BLOCK_EXCEPTION_CANT_FIND_NANO_BLOCK_CLS_ERR 20005
+#define NANO_BLOCK_EXCEPTION_CANT_INIT_NANO_BLK_METHOD_ERR 20006
+#define NANO_BLOCK_EXCEPTION_CANT_CREATE_NANO_BLK_OBJ_ERR 20007
 
 JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    JNIEnv *env, jobject thisObject, jstring account, jstring previous, jstring representative, jstring balance,
@@ -622,27 +630,28 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    F_BLOCK_TRANSFER *nano_block;
 
    if (!account) {
-      throwError(env, "nanoCreateBlock: Missing account");
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, "nanoCreateBlock: Missing account", NANO_BLOCK_EXCEPTION_MISSING_BLOCK_ERR);
       return NULL;
    }
 
    if (!representative) {
-      throwError(env, "nanoCreateBlock: Missing representative");
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, "nanoCreateBlock: Missing representative", NANO_BLOCK_EXCEPTION_MISSING_REPRESENTATIVE_ERR);
       return NULL;
    }
 
    if (!balance) {
-      throwError(env, "nanoCreateBlock: Missing balance");
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, "nanoCreateBlock: Missing balance", NANO_BLOCK_EXCEPTION_MISSING_BALANCE_ERR);
       return NULL;
    }
 
    if (!value_to_send_or_receive) {
-      throwError(env, "nanoCreateBlock: Missing value to send or receive");
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, "nanoCreateBlock: Missing value to send or receive", NANO_BLOCK_EXCEPTION_VAL_SEND_REC_ERR);
       return NULL;
    }
 
    if (!link) {
-      throwError(env, "nanoCreateBlock: Missing destination wallet or link to open block");
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, "nanoCreateBlock: Missing destination wallet or link to open block",
+         NANO_BLOCK_EXCEPTION_MISSING_LINK_ERR);
       return NULL;
    }
 
@@ -686,7 +695,7 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    if ((types=(uint32_t)(balance_type|value_to_send_or_receive_type))&F_BALANCE_RAW_128)
       if ((err=nano_java_raw128_str_to_bin_util((uint8_t *)(p_balance=(const char *)msg), c_balance))) {
          sprintf(msg, "nanoCreateBlock: Error when parse hex balance to bin. "MY_NANO_EMBEDDED_ERROR, "nano_java_raw128_str_to_bin_util", err);
-         throwError(env, msg);
+         throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err);
          goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6;
       }
 
@@ -695,35 +704,35 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_nanoCreateBlock(
    if (types&F_VALUE_SEND_RECEIVE_RAW_128)
       if ((err=nano_java_raw128_str_to_bin_util((uint8_t *)(p_val_send_rec=((const char *)&msg[sizeof(f_uint128_t)])), c_value_to_send_or_receive))) {
          sprintf(msg, "nanoCreateBlock: Error when parse hex send or receive value to bin. "MY_NANO_EMBEDDED_ERROR, "nano_java_raw128_str_to_bin_util", err);
-         throwError(env, msg);
+         throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err);
          goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6;
       }
 
    if ((err=nano_create_block_dynamic(&nano_block, c_account, 0, c_previous, 0, c_representative, 0, p_balance, p_val_send_rec,
       (uint32_t)types, c_link, 0, direction))) {
       sprintf(msg, "nanoCreateBlock: "MY_NANO_EMBEDDED_ERROR, "nano_create_block_dynamic", err);
-      throwError(env, msg);
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err);
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT6;
    }
 
    if (!(jNanoBlockClass=(*env)->FindClass(env, NANO_BLOCK_CLASS_PATH))) {
       sprintf(msg, CANT_FIND_NANO_BLOCK_ERROR, "nanoCreateBlock");
-      throwError(env, msg);
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, NANO_BLOCK_EXCEPTION_CANT_FIND_NANO_BLOCK_CLS_ERR);
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
    }
 
    if (!(methodId=NANO_JAVA_GET_INIT_METHOD(jNanoBlockClass))) {
-      throwError(env, "nanoCreateBlock: Can't Init new class NanoBlock");
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, "nanoCreateBlock: Can't Init new class NanoBlock", NANO_BLOCK_EXCEPTION_CANT_INIT_NANO_BLK_METHOD_ERR);
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
    }
 
    if (!(jResult=(*env)->NewObject(env, jNanoBlockClass, methodId))) {
-      throwError(env, "nanoCreateBlock: Can't create NanoBlock Object");
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, "nanoCreateBlock: Can't create NanoBlock Object", NANO_BLOCK_EXCEPTION_CANT_CREATE_NANO_BLK_OBJ_ERR);
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT7;
    }
 
    if ((err=setNanoBlockToJVM_util(env, jResult, jNanoBlockClass, nano_block))) {
-      throwError(env, msg);
+      throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err);
       goto Java_org_mynanojava_MyNanoJava_nanoCreateBlock_EXIT8;
    }
 
@@ -1075,12 +1084,58 @@ Java_org_mynanojava_MyNanoJava_byteToNanoBlock_EXIT1:
    return jResult;
 }
 
-jint throwError(JNIEnv *env, char *message)
+#define NANO_JAVA_INIT_THROWABLE_WITH_CODE(class) (*env)->GetMethodID(env, class, "<init>", "(Ljava/lang/String;I)V")
+jint throwNewException(JNIEnv *env, const char *class, const char *message, int error)
 {
+   jint err;
    jclass exClass;
+   jfieldID field;
+   jmethodID methodId;
+   jobject jErrObj;
+   jstring errMsg;
+   static char err_msg[1024];
 
-   if (!(exClass=(*env)->FindClass(env, "java/lang/Exception")))
-      return 1;
+   if (!(exClass=(*env)->FindClass(env, class))) {
+      if (class==NANO_JAVA_LANG_EXCEPTION_CLASS)
+         return 1;
+
+      if (!(exClass=(*env)->FindClass(env, NANO_JAVA_LANG_EXCEPTION_CLASS)))
+         return 2;
+
+      sprintf(err_msg, "throwNewException: Class not found '%s' with related message = '%s'", class, message);
+
+      message=err_msg;
+   } else if (error) {
+
+      if (!(errMsg=(*env)->NewStringUTF(env, message))) {
+         sprintf(err_msg, "throwNewException: Cannot set message '%s' into throwable class '%s' and errcode %d", message, class, error);
+         throwError(env, err_msg);
+         return 3;
+      }
+
+      if (!(methodId=NANO_JAVA_INIT_THROWABLE_WITH_CODE(exClass))) {
+         sprintf(err_msg, "throwNewException: Cannot initialize throwable class '%s' with message '%s' and errcode %d", class, message, error);
+         throwError(env, err_msg);
+         err=4;
+         goto throwNewException_EXIT1;
+      }
+
+      if (!(jErrObj=(*env)->NewObject(env, exClass, methodId, errMsg, error))) {
+         sprintf(err_msg, "throwNewException: Cannot create throwable class '%s' with message '%s' and errcode %d", class, message, error);
+         throwError(env, err_msg);
+         err=5;
+      } else if ((err=(*env)->Throw(env, jErrObj))) {
+         (*env)->DeleteLocalRef(env, jErrObj);
+         sprintf(err_msg, "throwNewException: Can't throw '%s' with message '%s' and errcode %d", class, message, error);
+         throwError(env, err_msg);
+      }
+
+throwNewException_EXIT1:
+      (*env)->DeleteLocalRef(env, errMsg);
+
+      return err;
+
+   }
 
    return (*env)->ThrowNew(env, exClass, message);
 }

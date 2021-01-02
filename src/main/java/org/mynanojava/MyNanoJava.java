@@ -22,6 +22,23 @@ public class MyNanoJava {
                 int direction
     ) throws Exception;
 
+    /**
+     * Create a Nano block
+     * @Author Fábio Pereira da Silva
+     * @param account
+     * @param previous
+     * @param representative
+     * @param balance
+     * @param balanceType
+     * @param valueToSendOrReceive
+     * @param valueToSendOrReceiveType
+     * @param link
+     * @param direction
+     * @return NanoBlock class instance
+     * @throws org.mynanojava.exceptions.NanoBlockException
+     * @throws Exception
+     * @see NanoBlock
+     */
     public native NanoBlock nanoCreateBlock(
             String account,
             String previous,
@@ -32,7 +49,7 @@ public class MyNanoJava {
             int valueToSendOrReceiveType,
             String link,
             int direction
-    ) throws Exception;
+    ) throws Throwable;
 
     public native String nanoBlockToJSON(byte[] nanoBlock) throws Exception;
     public native byte[] nanoP2PoWBlock(
