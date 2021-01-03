@@ -14,7 +14,7 @@ import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
 /**
  * <p>MyNanoJavaParameterTest class.</p>
  *
- * @author fabiolinux
+ * @author Fábio Pereira da Silva
  * @version $Id: $Id
  * @since 0.1.0
  */

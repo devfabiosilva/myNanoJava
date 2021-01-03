@@ -4,14 +4,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
+import org.mynanojava.exceptions.BalanceException;
 import org.mynanojava.exceptions.NanoBlockException;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mynanojava.enums.NanoJavaEnumBalanceType.*;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_RECEIVE;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_SEND;
 import static org.mynanojava.enums.NanoAccountEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumAddSub.*;
-import static org.mynanojava.enums.NanoJavaEnumBalanceType.NANO_BALANCE_REAL;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.REP_XRB;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.SENDER_XRB;
 import static org.mynanojava.enums.NanoJavaEnumValueToSendOrReceive.NANO_VALUE_TO_SEND_OR_RECEIVE_REAL;
@@ -378,5 +379,83 @@ public class MyNanoJavaTest {
             assertEquals(8017, ((NanoBlockException) e).getError());
             assertEquals("nanoCreateBlock: myNanoEmbedded C library error in function \"nano_create_block_dynamic\" 8017", e.getMessage());
         }
+    }
+
+    @Test
+    public void getBalanceTest() throws Throwable {
+        NanoBlock nanoBlock;
+        nanoBlock = myNanoJava.nanoCreateBlock(
+                "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
+                "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                    "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "1.88",
+                NANO_BALANCE_REAL.getValue(),
+                "1.0",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_SEND.getValue()
+        );
+
+        assertNotEquals(null, nanoBlock);
+
+        String balance = nanoBlock.getBalance(NANO_BALANCE_REAL);
+        assertEquals("0.88", balance);
+
+        balance = nanoBlock.getBalance(NANO_BALANCE_RAW);
+        assertEquals("880000000000000000000000000000", balance);
+
+        balance = nanoBlock.getBalance(NANO_BALANCE_HEX);
+        assertEquals("0000000b1b6ef0655cb8d15d80000000", balance);
+
+        try {
+            NanoBlock.getBalanceFromByte(nanoBlock.getByteBalance(), NANO_BALANCE_REAL.getValue()+3);
+            fail("Should fail");
+        } catch (Throwable e) {
+            assertTrue(e instanceof BalanceException);
+            assertEquals(130, ((BalanceException) e).getError());
+            assertEquals("getBalance_util @ getBalanceFromByte: Error 130. With byte size 16", e.getMessage());
+        }
+
+        try {
+            NanoBlock.getBalanceFromByte(null, NANO_BALANCE_REAL.getValue());
+            fail("Should fail here");
+        } catch (Throwable e) {
+            assertTrue(e instanceof Exception);
+            assertEquals("getBalanceFromByte: Missing balance", e.getMessage());
+        }
+
+        assertEquals("0.88",NanoBlock.getBalanceFromByte(nanoBlock.getByteBalance(), NANO_BALANCE_REAL.getValue()));
+
+        balance = NanoBlock.getBalanceFromNanoBlock(nanoBlock, NANO_BALANCE_REAL.getValue());
+        assertEquals("0.88", balance);
+
+        balance = null;
+
+        try {
+            balance = NanoBlock.getBalanceFromNanoBlock(null, NANO_BALANCE_RAW.getValue());
+            fail("NanoBlock.getBalanceFromNanoBlock should fail");
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoBlockException);
+            assertEquals(100, ((NanoBlockException) e).getError());
+            assertEquals("getBalanceFromNanoBlock: Missing NanoBlock object", e.getMessage());
+        } finally {
+            assertNull(balance);
+        }
+
+        balance = null;
+
+        try {
+            balance = NanoBlock.getBalanceFromNanoBlock(nanoBlock, NANO_BALANCE_RAW.getValue()+1);
+            fail("NanoBlock.getBalanceFromNanoBlock should fail 2");
+        } catch (Throwable e) {
+            assertTrue(e instanceof BalanceException);
+            assertEquals(130, ((BalanceException) e).getError());
+            assertEquals("getBalance_util @ getBalanceFromNanoBlock: Error 130", e.getMessage());
+        } finally {
+            assertNull(balance);
+        }
+
+        assertEquals("880000000000000000000000000000", NanoBlock.getBalanceFromNanoBlock(nanoBlock, NANO_BALANCE_RAW.getValue()));
+        assertEquals("0000000b1b6ef0655cb8d15d80000000", NanoBlock.getBalanceFromNanoBlock(nanoBlock, NANO_BALANCE_HEX.getValue()));
     }
 }

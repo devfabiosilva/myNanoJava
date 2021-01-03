@@ -1,5 +1,5 @@
 package org.mynanojava;
-
+//https://stackoverflow.com/questions/32578965/how-to-create-jni-header-file-with-intellij-idea
 import org.mynanojava.blockchain.NanoBlock;
 
 public class MyNanoJava {

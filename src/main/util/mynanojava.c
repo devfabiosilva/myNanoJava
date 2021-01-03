@@ -6,6 +6,7 @@
 jint throwNewException(JNIEnv *, const char *, const char *, int);
 #define NANO_JAVA_LANG_EXCEPTION_CLASS "java/lang/Exception"
 #define NANO_BLOCK_EXCEPTION_CLASS "org/mynanojava/exceptions/NanoBlockException"
+#define BALANCE_EXCEPTION_CLASS "org/mynanojava/exceptions/BalanceException"
 #define throwError(env, msg) throwNewException(env, NANO_JAVA_LANG_EXCEPTION_CLASS, msg, 0)
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
 #define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
@@ -1082,6 +1083,110 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_MyNanoJava_byteToNanoBlock(JNIEnv 
 Java_org_mynanojava_MyNanoJava_byteToNanoBlock_EXIT1:
    (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, JNI_ABORT);
    return jResult;
+}
+
+#define NANO_BALANCE_TYPE_REAL 16
+#define NANO_BALANCE_TYPE_RAW 8
+#define NANO_BALANCE_TYPE_HEX 4
+int getBalance_util(char *ret_val, size_t ret_val_sz, uint8_t *val, size_t val_sz, int type)
+{
+
+   if (val_sz!=sizeof(((F_BLOCK_TRANSFER *)0)->balance))
+      return 129;
+
+   switch (type) {
+      case NANO_BALANCE_TYPE_REAL:
+         return f_nano_raw_to_string(ret_val, NULL, ret_val_sz, (void *)val, F_RAW_TO_STR_UINT128);
+      case NANO_BALANCE_TYPE_RAW:
+         return f_nano_balance_to_str(ret_val, ret_val_sz, NULL, val);
+      case NANO_BALANCE_TYPE_HEX:
+         fhex2strv2(ret_val, (const void *)val, val_sz, 0);
+         return 0;
+   }
+
+   return 130;
+
+}
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    getBalanceFromByte
+ * Signature: ([BI)Ljava/lang/String;
+ */
+#define THROW_NANO_BALANCE_EXCEPTION(env, msg, err) throwNewException(env, BALANCE_EXCEPTION_CLASS, msg, err)
+JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromByte(JNIEnv *env, jobject thisObj, jbyteArray balance, jint balanceType)
+{
+   int err;
+   jstring res;
+   jbyte *c_byte_array;
+   jsize jSize;
+
+   if (!balance) {
+      throwError(env, "getBalanceFromByte: Missing balance");
+      return NULL;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, balance, JNI_FALSE))) {
+      throwError(env, "getBalanceFromByte: Unable to get balance");
+      return NULL;
+   }
+
+   res=NULL;
+
+   jSize=(*env)->GetArrayLength(env, balance);
+   if ((*env)->ExceptionCheck(env)) {
+      throwError(env, "getBalanceFromByte: Unable to get balance length");
+      goto Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromByte_EXIT1;
+   }
+
+   if ((err=getBalance_util(msg, sizeof(msg), (uint8_t *)c_byte_array, jSize, balanceType))) {
+      sprintf(msg, "getBalance_util @ getBalanceFromByte: Error %d. With byte size %d", err, jSize);
+      THROW_NANO_BALANCE_EXCEPTION(env, msg, err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromByte_EXIT1;
+   }
+
+   if (!(res=(*env)->NewStringUTF(env, msg)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromByte_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, balance, c_byte_array, JNI_ABORT);
+
+   return res;
+}
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    getBalanceFromNanoBlock
+ * Signature: (Lorg/mynanojava/blockchain/NanoBlock;I)Ljava/lang/String;
+ */
+#define THROW_NANO_BLOCK_EXCEPTION(env, msg, err) throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err)
+JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromNanoBlock(JNIEnv *env, jobject thisObj, jobject nanoBlock, jint balanceType)
+{
+   int err;
+   jstring res;
+   F_BLOCK_TRANSFER *nano_block;
+
+   if ((err=java_NanoBlock_2_C_NanoBlock_util(&nano_block, env, nanoBlock, "getBalanceFromNanoBlock"))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, err);
+      return NULL;
+   }
+
+   res=NULL;
+
+   if ((err=getBalance_util(msg, sizeof(msg), nano_block->balance, sizeof(((F_BLOCK_TRANSFER *)0)->balance), balanceType))) {
+      sprintf(msg, "getBalance_util @ getBalanceFromNanoBlock: Error %d", err);
+      THROW_NANO_BALANCE_EXCEPTION(env, msg, err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromNanoBlock_EXIT1;
+   }
+
+   if (!(res=(*env)->NewStringUTF(env, msg)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromNanoBlock_EXIT1:
+   memset(nano_block, 0, sizeof(F_BLOCK_TRANSFER));
+   free(nano_block);
+
+   return res;
 }
 
 #define NANO_JAVA_INIT_THROWABLE_WITH_CODE(class) (*env)->GetMethodID(env, class, "<init>", "(Ljava/lang/String;I)V")

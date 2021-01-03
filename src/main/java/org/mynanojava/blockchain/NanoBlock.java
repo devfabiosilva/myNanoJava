@@ -3,6 +3,7 @@ package org.mynanojava.blockchain;
 import org.mynanojava.enums.NanoAccountEnum;
 import org.mynanojava.enums.NanoJavaEnumBalanceType;
 import org.mynanojava.enums.NanoJavaEnumPrefix;
+import org.mynanojava.exceptions.BalanceException;
 
 import static org.mynanojava.enums.NanoAccountEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.*;
@@ -23,6 +24,8 @@ public class NanoBlock {
 
     public static native String byteToWallet(byte[] wallet, int type) throws Exception;
     public static native String nanoBlockToJSON(NanoBlock nanoBlock) throws Exception;
+    public static native String getBalanceFromByte(byte[] balance, int balanceType) throws Throwable;
+    public static native String getBalanceFromNanoBlock(NanoBlock balance, int balanceType) throws Throwable;
 
     public String getAccount(NanoAccountEnum accountType) throws Exception {
         int type = accountType.getValue();
@@ -56,8 +59,8 @@ public class NanoBlock {
         return byteToWallet(this.representative, type);
     }
 
-    public String getBalance(NanoJavaEnumBalanceType balanceType) {
-        return "";
+    public String getBalance(NanoJavaEnumBalanceType balanceType) throws Throwable {
+        return getBalanceFromByte(this.balance, balanceType.getValue());
     }
 
     public String getLink(NanoAccountEnum linkType) throws Exception {
