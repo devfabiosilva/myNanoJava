@@ -3,7 +3,7 @@ package org.mynanojava.blockchain;
 import org.mynanojava.enums.NanoAccountEnum;
 import org.mynanojava.enums.NanoJavaEnumBalanceType;
 import org.mynanojava.enums.NanoJavaEnumPrefix;
-import org.mynanojava.exceptions.BalanceException;
+import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.mynanojava.enums.NanoAccountEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.*;
@@ -18,14 +18,14 @@ public class NanoBlock {
     private long work = 0L;
     private int prefixes = 0;
 
-    private NanoBlock() {
-
-    }
-
     public static native String byteToWallet(byte[] wallet, int type) throws Exception;
     public static native String nanoBlockToJSON(NanoBlock nanoBlock) throws Exception;
     public static native String getBalanceFromByte(byte[] balance, int balanceType) throws Throwable;
     public static native String getBalanceFromNanoBlock(NanoBlock balance, int balanceType) throws Throwable;
+    public static native void signByteNanoBlock(byte[] nanoBlock, String privateKey) throws Throwable;
+    public static native void signNanoBlock(NanoBlock nanoBlock, String privateKey) throws Throwable;
+    public static native String generateNanoSeed(int entropy) throws Throwable;
+    public static native NanoKeyPair fromNanoSeed(String seed, int number) throws Throwable;
 
     public String getAccount(NanoAccountEnum accountType) throws Exception {
         int type = accountType.getValue();
@@ -115,5 +115,13 @@ public class NanoBlock {
 
     public String toJson() throws Exception {
         return nanoBlockToJSON(this);
+    }
+
+    public void sign(String privateKey) throws Throwable {
+        signNanoBlock(this, privateKey);
+    }
+
+    public boolean isBlockSigned() {
+        return (this.signature != null);
     }
 }

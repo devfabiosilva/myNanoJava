@@ -1189,6 +1189,46 @@ Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromNanoBlock_EXIT1:
    return res;
 }
 
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    signByteNanoBlock
+ * Signature: ([BLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock(JNIEnv *env, jobject thisObject, jbyteArray nanoBlock, jstring privateKey)
+{
+// TODO To be implemented
+}
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    signNanoBlock
+ * Signature: (Lorg/mynanojava/blockchain/NanoBlock;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_org_mynanojava_blockchain_NanoBlock_signNanoBlock(JNIEnv *env, jobject thisObj, jobject nanoBlock, jstring privateKey)
+{
+// TODO To be implemented
+}
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    generateNanoSeed
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_generateNanoSeed(JNIEnv *env, jobject thisObj, jint entropy)
+{
+// TODO To be implemented
+}
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    fromNanoSeed
+ * Signature: (Ljava/lang/String;I)Lorg/mynanojava/wallet/NanoKeyPair;
+ */
+JNIEXPORT jobject JNICALL Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed(JNIEnv *env, jobject thisObj, jstring nanoSeed, jint number)
+{
+// TODO To be implemented
+}
+
 #define NANO_JAVA_INIT_THROWABLE_WITH_CODE(class) (*env)->GetMethodID(env, class, "<init>", "(Ljava/lang/String;I)V")
 jint throwNewException(JNIEnv *env, const char *class, const char *message, int error)
 {
