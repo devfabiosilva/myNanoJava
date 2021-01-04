@@ -442,6 +442,7 @@ int setByteArrayFieldId_util(
 )
 {
 
+   int err;
    jfieldID field;
    jbyteArray byte_array;
 
@@ -451,11 +452,23 @@ int setByteArrayFieldId_util(
    if (!(byte_array=(*env)->NewByteArray(env, c_byte_array_sz)))
       return -41;
 
+   err=0;
    (*env)->SetByteArrayRegion(env, byte_array, 0, c_byte_array_sz, (const jbyte *)c_byte_array);
-   (*env)->SetObjectField(env, thisObject, field, byte_array);
-   (*env)->DeleteLocalRef(env, byte_array);
+   if ((*env)->ExceptionCheck(env)) {
+      err=-42;
+      goto setByteArrayFieldId_util_EXIT1;
+   }
 
-   return 0;
+   (*env)->SetObjectField(env, thisObject, field, byte_array);
+   if ((*env)->ExceptionCheck(env))
+      err=-43;
+
+setByteArrayFieldId_util_EXIT1:
+   (*env)->DeleteLocalRef(env, byte_array);
+   if ((*env)->ExceptionCheck(env))
+      err=-44;
+
+   return err;
 }
 
 int getByteArrayFieldId_util(
