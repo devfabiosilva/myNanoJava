@@ -1229,7 +1229,35 @@ JNIEXPORT void JNICALL Java_org_mynanojava_blockchain_NanoBlock_signNanoBlock(JN
  */
 JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_generateNanoSeed(JNIEnv *env, jobject thisObj, jint entropy)
 {
-// TODO To be implemented
+   int err;
+   jstring res;
+   uint32_t entropy_level;
+   uint8_t *p;
+
+   if ((entropy_level=f_sel_to_entropy_level(entropy))==0) {
+      sprintf(msg, "generateNanoSeed: Invalid entropy number %d", entropy);
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, 177);
+      return NULL;
+   }
+
+   f_random_attach(gen_rand_no_entropy_util);
+
+   if ((err=f_generate_nano_seed(p=(uint8_t *)&msg[(sizeof(msg)>>1)], entropy_level))) {
+      sprintf(msg, "f_generate_nano_seed @ generateNanoSeed: Can't generate SEED with entropy level %u", entropy_level);
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, err);
+   }
+
+   f_random_detach();
+
+   if (err)
+      return NULL;
+
+   if (!(res=(*env)->NewStringUTF(env, (const char *)fhex2strv2(msg, (const void *)p, 32, 1))))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+   memset(msg, 0, sizeof(msg));
+
+   return res;
 }
 
 /*

@@ -8,6 +8,8 @@ import org.mynanojava.exceptions.BalanceException;
 import org.mynanojava.exceptions.NanoBlockException;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mynanojava.blockchain.NanoBlock.generateNanoSeed;
+import static org.mynanojava.enums.EntropyTypeEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.*;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_RECEIVE;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_SEND;
@@ -457,5 +459,36 @@ public class MyNanoJavaTest {
 
         assertEquals("880000000000000000000000000000", NanoBlock.getBalanceFromNanoBlock(nanoBlock, NANO_BALANCE_RAW.getValue()));
         assertEquals("0000000b1b6ef0655cb8d15d80000000", NanoBlock.getBalanceFromNanoBlock(nanoBlock, NANO_BALANCE_HEX.getValue()));
+    }
+
+    @Test
+    public void generateRandomSeed() throws Throwable {
+        final String str = "SEED Generating random ";
+
+        try {
+            generateNanoSeed(1726);
+            fail("Nano seed should fail");
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoBlockException);
+            assertEquals("generateNanoSeed: Invalid entropy number 1726", e.getMessage());
+        }
+
+        System.out.println(str + NOT_RECOMENDED.toString());
+        System.out.println(generateNanoSeed(NOT_RECOMENDED.getValue()));
+
+        System.out.println(str + NOT_ENOUGH.toString());
+        System.out.println(generateNanoSeed(NOT_ENOUGH.getValue()));
+
+        System.out.println(str + GOOD.toString());
+        System.out.println(generateNanoSeed(GOOD.getValue()));
+
+        System.out.println(str + " (slow) but secure " + EXCELENT.toString());
+        System.out.println(generateNanoSeed(EXCELENT.getValue()));
+
+        System.out.println(str + " (very slow) paranoic. It can take a little longer ..." + PARANOIC.toString());
+        System.out.println("Please. Move your mouse, open programs, listen a music in your computer to increase system entropy");
+        System.out.println("Don't forget. Pick a cup of coffe ;)");
+        System.out.println(generateNanoSeed(PARANOIC.getValue()));
+
     }
 }
