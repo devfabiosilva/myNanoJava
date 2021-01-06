@@ -1,13 +1,17 @@
 package org.mynanojava;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
 import org.mynanojava.exceptions.BalanceException;
 import org.mynanojava.exceptions.NanoBlockException;
+import org.mynanojava.exceptions.NanoKeyPairException;
+import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mynanojava.blockchain.NanoBlock.fromNanoSeed;
 import static org.mynanojava.blockchain.NanoBlock.generateNanoSeed;
 import static org.mynanojava.enums.EntropyTypeEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.*;
@@ -461,6 +465,7 @@ public class MyNanoJavaTest {
         assertEquals("0000000b1b6ef0655cb8d15d80000000", NanoBlock.getBalanceFromNanoBlock(nanoBlock, NANO_BALANCE_HEX.getValue()));
     }
 
+    @Ignore
     @Test
     public void generateRandomSeed() throws Throwable {
         final String str = "SEED Generating random ";
@@ -490,5 +495,59 @@ public class MyNanoJavaTest {
         System.out.println("Don't forget. Pick a cup of coffe ;)");
         System.out.println(generateNanoSeed(PARANOIC.getValue()));
 
+    }
+
+    @Test
+    public void extractFromNanoSeedTest() throws Throwable {
+        final String NANO_SEED = "7C35B46F66B0923736E77650A9EEC3D6D31B89F649F27EE974BAA75C0ED04C77";
+
+        NanoKeyPair keyPair;
+        long accountNumber = 1981;
+
+        keyPair = fromNanoSeed(NANO_SEED, accountNumber);
+        assertEquals(accountNumber, keyPair.getAccountNumber());
+        assertEquals("611BCE7922F5FB3A0A9C4ACFE7C9B53AC79DD902A2CE0A56830052B9F4A84FB1", keyPair.getPrivateKey());
+        assertEquals("207BD39D3BF75850FB9F14F477C981593353EB501D39ED4BA06C79C21652BDBF", keyPair.getPublicKey(HEX_ACCOUNT));
+        assertEquals("xrb_1a5utggmqxtrc5xsy79ngz6r4pbmchoo19bsxo7t1u5srad77hfzf6ugxwws", keyPair.getPublicKey(XRB_PREFIX));
+        assertEquals("nano_1a5utggmqxtrc5xsy79ngz6r4pbmchoo19bsxo7t1u5srad77hfzf6ugxwws", keyPair.getPublicKey(NANO_PREFIX));
+        System.out.println("Account " + keyPair.getAccountNumber());
+
+        System.out.println("Private key " + keyPair.getPrivateKey());
+        System.out.println("Public key " + keyPair.getPublicKey(HEX_ACCOUNT));
+        System.out.println("Nano account " + keyPair.getPublicKey(NANO_PREFIX));
+        System.out.println("Nano account (XRB) " + keyPair.getPublicKey(XRB_PREFIX));
+
+        NanoKeyPair keyPair1 = null;
+        final String NANO_SEED2 = "75E73258DB2A3DE79360A22A2D26B75576ADB58C8FDFF063FF5D95D16492ACFC";
+        try {
+            keyPair1 = fromNanoSeed(NANO_SEED2, (long) Math.pow(2, 32));
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoKeyPairException);
+            assertEquals(291, ((NanoKeyPairException) e).getError());
+            assertEquals("Invalid Nano account number 4294967296", e.getMessage());
+        } finally {
+            assertNull(keyPair1);
+        }
+        NanoKeyPair keyPair2 = null;
+        try {
+            keyPair2 = fromNanoSeed("", 0);
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoKeyPairException);
+            assertEquals(293, ((NanoKeyPairException) e).getError());
+            assertEquals("fromNanoSeed: Invalid Nano Seed size", e.getMessage());
+        } finally {
+            assertNull(keyPair2);
+        }
+
+        NanoKeyPair keyPair3 = null;
+        try {
+            keyPair3 = fromNanoSeed(null, 0);
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoKeyPairException);
+            assertEquals(289, ((NanoKeyPairException) e).getError());
+            assertEquals("Missing Nano SEED", e.getMessage());
+        } finally {
+            assertNull(keyPair3);
+        }
     }
 }

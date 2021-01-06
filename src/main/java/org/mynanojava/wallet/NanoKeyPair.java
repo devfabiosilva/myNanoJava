@@ -8,7 +8,7 @@ import static org.mynanojava.enums.NanoAccountEnum.HEX_ACCOUNT;
 public class NanoKeyPair {
     private byte[] privateKey = null;
     private byte[] publicKey = null;
-    private long keyNumber = 0;
+    private long accountNumber = 0;
 
     private NanoKeyPair() {
 
@@ -22,15 +22,15 @@ public class NanoKeyPair {
         return this.privateKey;
     }
 
-    public long getKeyNumber() {
-        return this.keyNumber;
-    }
-
-    public String getPublicKey(NanoAccountEnum type) throws Exception {
+    public String getPublicKey(NanoAccountEnum type) throws Throwable {
         return byteToWallet(this.publicKey, type.getValue());
     }
 
-    public String getPrivateKey() throws Exception {
+    public String getPrivateKey() throws Throwable {
         return byteToWallet(this.privateKey, HEX_ACCOUNT.getValue());
+    }
+
+    public long getAccountNumber() {
+        return this.accountNumber;
     }
 }

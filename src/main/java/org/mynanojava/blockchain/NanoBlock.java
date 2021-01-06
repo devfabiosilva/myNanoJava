@@ -25,7 +25,7 @@ public class NanoBlock {
     public static native void signByteNanoBlock(byte[] nanoBlock, String privateKey) throws Throwable;
     public static native void signNanoBlock(NanoBlock nanoBlock, String privateKey) throws Throwable;
     public static native String generateNanoSeed(int entropy) throws Throwable;
-    public static native NanoKeyPair fromNanoSeed(String seed, int number) throws Throwable;
+    public static native NanoKeyPair fromNanoSeed(String seed, long number) throws Throwable;
 
     public String getAccount(NanoAccountEnum accountType) throws Exception {
         int type = accountType.getValue();

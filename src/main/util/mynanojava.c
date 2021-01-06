@@ -16,6 +16,8 @@ jint throwNewException(JNIEnv *, const char *, const char *, int);
 #define NANO_JAVA_LONG_TYPE "J"
 #define NANO_JAVA_INT_TYPE "I"
 #define CANT_FIND_NANO_BLOCK_ERROR "%s: Can't find class org.mynanojava.blockchain.NanoBlock"
+#define NANO_KEY_PAIR_EXCEPTION_CLASS "org/mynanojava/exceptions/NanoKeyPairException"
+#define NANO_KEY_PAIR_CLASS_PATH "org/mynanojava/wallet/NanoKeyPair"
 
 static char msg[768];
 
@@ -521,6 +523,28 @@ int getLongFieldUtil(
 
    if ((*env)->ExceptionCheck(env))
       return -91;
+
+   return 0;
+}
+
+int setLongField_util(
+   JNIEnv *env,
+   jobject thisObject,
+   jclass class,
+   const char *fieldId,
+   long long int value
+)
+{
+
+   jfieldID field;
+
+   if (!(field=(*env)->GetFieldID(env, class, fieldId, NANO_JAVA_LONG_TYPE)))
+      return -50;
+
+   (*env)->SetLongField(env, thisObject, field, (jlong)value);
+
+   if ((*env)->ExceptionCheck(env))
+      return -51;
 
    return 0;
 }
@@ -1265,9 +1289,103 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_generateNanoS
  * Method:    fromNanoSeed
  * Signature: (Ljava/lang/String;I)Lorg/mynanojava/wallet/NanoKeyPair;
  */
-JNIEXPORT jobject JNICALL Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed(JNIEnv *env, jobject thisObj, jstring nanoSeed, jint number)
+#define NANO_KEY_PAIR_CLASS_ACCOUNT_NUMBER "accountNumber"
+#define NANO_KEY_PAIR_CLASS_PUBLIC_KEY "publicKey"
+#define NANO_KEY_PAIR_CLASS_PRIVATE_KEY "privateKey"
+#define THROW_NANO_KEY_PAIR_EXCEPTION(env, msg, err) throwNewException(env, NANO_KEY_PAIR_EXCEPTION_CLASS, msg, err)
+JNIEXPORT jobject JNICALL Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed(JNIEnv *env, jobject thisObj, jstring nanoSeed, jlong number)
 {
-// TODO To be implemented
+   int err;
+   jobject res;
+   jclass jNanoKeyPairClass;
+   jmethodID methodId;
+   const char *c_nano_seed;
+   uint8_t *c_private_key, *c_public_key;
+
+   if (!nanoSeed) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "Missing Nano SEED", 289);
+      return NULL;
+   }
+
+   if (number<0) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "Negative number for wallet is forbidden", 290);
+      return NULL;
+   }
+
+   if ((uint64_t)number>(uint64_t)((uint32_t)-1)) {
+      sprintf(msg, "Invalid Nano account number %ld", (long int)number);
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, msg, 291);
+      return NULL;
+   }
+
+   if (!(c_nano_seed=(*env)->GetStringUTFChars(env, nanoSeed, NULL))) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "fromNanoSeed: Error when parse Nano SEED", 292);
+      return NULL;
+   }
+
+   res=NULL;
+
+   if (strnlen(c_nano_seed, 65)!=64) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "fromNanoSeed: Invalid Nano Seed size", 293);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT1;
+   }
+
+   if ((err=array32bytes_str_to_hex_util((uint8_t *)msg, c_nano_seed))) {
+      sprintf(msg, "array32bytes_str_to_hex_util @ fromNanoSeed: hex 2 bin error %d", err);
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, msg, err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2;
+   }
+
+   if ((err=f_seed_to_nano_wallet(c_private_key=((uint8_t *)msg+128), c_public_key=((uint8_t *)msg+256), (uint8_t *)msg, (uint32_t)number))) {
+      sprintf(msg, "f_seed_to_nano_wallet @ fromNanoSeed: Key pair parse error %d", err);
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, msg, err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2;
+   }
+
+   if (!(jNanoKeyPairClass=(*env)->FindClass(env, NANO_KEY_PAIR_CLASS_PATH))) {;
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "fromNanoSeed error: "NANO_KEY_PAIR_CLASS_PATH, 294);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2;
+   }
+
+   if (!(methodId=NANO_JAVA_GET_INIT_METHOD(jNanoKeyPairClass))) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "Can't init method: "NANO_KEY_PAIR_CLASS_PATH, 295);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2;
+   }
+
+   if (!(res=(*env)->NewObject(env, jNanoKeyPairClass, methodId))) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "Can't create object at class: "NANO_KEY_PAIR_CLASS_PATH, 296);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2;
+   }
+
+   if ((err=setLongField_util(env, res, jNanoKeyPairClass, NANO_KEY_PAIR_CLASS_ACCOUNT_NUMBER, (long long int)number))) {
+      sprintf(msg, "setLongField_util @ fromNanoSeed. Error when setting Nano account number. Err = %d", err);
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, msg, err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT3;
+   }
+
+   if ((err=setByteArrayFieldId_util(env, res, jNanoKeyPairClass, NANO_KEY_PAIR_CLASS_PUBLIC_KEY, c_public_key, 32))) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "Error when set public key", err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT3;
+   }
+
+   if ((err=setByteArrayFieldId_util(env, res, jNanoKeyPairClass, NANO_KEY_PAIR_CLASS_PRIVATE_KEY, c_private_key, 32))) {
+      THROW_NANO_KEY_PAIR_EXCEPTION(env, "Error when set private key", err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT3;
+   }
+
+   goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2;
+
+Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT3:
+   (*env)->DeleteLocalRef(env, res);
+   res=NULL;
+
+Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2:
+   memset(msg, 0, sizeof(msg));
+
+Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, nanoSeed, c_nano_seed);
+
+   return res;
 }
 
 #define NANO_JAVA_INIT_THROWABLE_WITH_CODE(class) (*env)->GetMethodID(env, class, "<init>", "(Ljava/lang/String;I)V")
