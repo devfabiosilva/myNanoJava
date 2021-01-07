@@ -11,8 +11,7 @@ import org.mynanojava.exceptions.NanoKeyPairException;
 import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mynanojava.blockchain.NanoBlock.fromNanoSeed;
-import static org.mynanojava.blockchain.NanoBlock.generateNanoSeed;
+import static org.mynanojava.blockchain.NanoBlock.*;
 import static org.mynanojava.enums.EntropyTypeEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.*;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_RECEIVE;
@@ -533,8 +532,8 @@ public class MyNanoJavaTest {
             keyPair2 = fromNanoSeed("", 0);
         } catch (Throwable e) {
             assertTrue(e instanceof NanoKeyPairException);
-            assertEquals(293, ((NanoKeyPairException) e).getError());
-            assertEquals("fromNanoSeed: Invalid Nano Seed size", e.getMessage());
+            assertEquals(-21, ((NanoKeyPairException) e).getError());
+            assertEquals("array32bytes_str_to_hex_util @ fromNanoSeed: hex 2 bin error -21", e.getMessage());
         } finally {
             assertNull(keyPair2);
         }
@@ -549,5 +548,36 @@ public class MyNanoJavaTest {
         } finally {
             assertNull(keyPair3);
         }
+    }
+
+    @Test
+    public void signBlockTest() throws Throwable {
+        final String NANO_SEED = "7C34146F66B0923736E71650A9EEC3D6D31B39F649F27EE974BFA75C0ED04C72";
+
+        NanoKeyPair keyPair;
+        long accountNumber = 37000;
+
+        keyPair = fromNanoSeed(NANO_SEED, accountNumber);
+        assertEquals(accountNumber, keyPair.getAccountNumber());
+        System.out.println("Public key: " + keyPair.getPublicKey(HEX_ACCOUNT));
+        System.out.println("Account: " + keyPair.getPublicKey(NANO_PREFIX));
+        System.out.println("Private key: " + keyPair.getPrivateKey());
+        System.out.println("Creating Nano Block ...");
+        byte[] block = myNanoJava.nano_create_block(
+                keyPair.getPublicKey(NANO_PREFIX),
+                "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "1.8",
+                NANO_BALANCE_REAL.getValue(),
+                "1.0",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_SEND.getValue());
+        System.out.println("Block to json");
+        System.out.println(myNanoJava.nanoBlockToJSON(block));
+        signByteNanoBlock(block, keyPair.getPrivateKey());
+
+        System.out.println("Block to json (signed)");
+        System.out.println(myNanoJava.nanoBlockToJSON(block));
     }
 }

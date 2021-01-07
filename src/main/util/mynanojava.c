@@ -1231,9 +1231,88 @@ Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromNanoBlock_EXIT1:
  * Method:    signByteNanoBlock
  * Signature: ([BLjava/lang/String;)V
  */
+
+int signBlock_util(
+   F_BLOCK_TRANSFER *user_block,
+   F_BLOCK_TRANSFER *fee_block,
+   uint8_t *private_key
+)
+{
+
+   if (fee_block)
+      if (!f_nano_is_valid_block(fee_block))
+         return 60;
+
+   if (!f_nano_is_valid_block(user_block))
+      return 61;
+
+   return f_nano_sign_block(user_block, fee_block, private_key);
+
+}
+
 JNIEXPORT void JNICALL Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock(JNIEnv *env, jobject thisObject, jbyteArray nanoBlock, jstring privateKey)
 {
-// TODO To be implemented
+
+   int err;
+   jint mode;
+   jbyte *c_byte_array;
+   const char *c_private_key;
+   jsize jSize;
+
+   if (!nanoBlock) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "signByteNanoBlock: Missing Nano block (bytes)", 301);
+      return;
+   }
+
+   if (!privateKey) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "signByteNanoBlock: Missing private key", 302);
+      return;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, nanoBlock, NULL))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "signByteNanoBlock: Unable to get Nano Block", 303);
+      return;
+   }
+
+   mode=JNI_ABORT;
+
+   jSize=(*env)->GetArrayLength(env, nanoBlock);
+   if ((*env)->ExceptionCheck(env)) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "signByteNanoBlock: Can't determine size of Nano block", 304);
+      goto Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock_EXIT1;
+   }
+
+   if (jSize!=sizeof(F_BLOCK_TRANSFER)) {
+      sprintf(msg, "signByteNanoBlock: Invalid Nano block size %d", jSize);
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, 305);
+      goto Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock_EXIT1;
+   }
+
+   if (!(c_private_key=(*env)->GetStringUTFChars(env, privateKey, NULL))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "signByteNanoBlock: Can't parse private key to C string", 306);
+      goto Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock_EXIT1;
+   }
+
+   if ((err=array32bytes_str_to_hex_util((uint8_t *)msg, c_private_key))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "array32bytes_str_to_hex_util @ signByteNanoBlock: Can't parse C string private key to bin", err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock_EXIT2;
+   }
+
+   memcpy(msg+32, ((F_BLOCK_TRANSFER *)c_byte_array)->account, sizeof(((F_BLOCK_TRANSFER *)c_byte_array)->account));
+
+   if ((err=signBlock_util((F_BLOCK_TRANSFER *)c_byte_array, NULL, (uint8_t *)msg))) {
+      sprintf(msg, "signBlock_util @ signByteNanoBlock: Can't sign Nano block. Error: %d", err);
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, err);
+   } else
+      mode=0;
+
+Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock_EXIT2:
+   memset(msg, 0, sizeof(msg));
+   (*env)->ReleaseStringUTFChars(env, privateKey, c_private_key);
+
+Java_org_mynanojava_blockchain_NanoBlock_signByteNanoBlock_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, mode);
+
 }
 
 /*
@@ -1325,11 +1404,6 @@ JNIEXPORT jobject JNICALL Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed(
 
    res=NULL;
 
-   if (strnlen(c_nano_seed, 65)!=64) {
-      THROW_NANO_KEY_PAIR_EXCEPTION(env, "fromNanoSeed: Invalid Nano Seed size", 293);
-      goto Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT1;
-   }
-
    if ((err=array32bytes_str_to_hex_util((uint8_t *)msg, c_nano_seed))) {
       sprintf(msg, "array32bytes_str_to_hex_util @ fromNanoSeed: hex 2 bin error %d", err);
       THROW_NANO_KEY_PAIR_EXCEPTION(env, msg, err);
@@ -1382,7 +1456,6 @@ Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT3:
 Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2:
    memset(msg, 0, sizeof(msg));
 
-Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT1:
    (*env)->ReleaseStringUTFChars(env, nanoSeed, c_nano_seed);
 
    return res;
