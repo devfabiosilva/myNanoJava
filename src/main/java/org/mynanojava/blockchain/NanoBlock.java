@@ -20,6 +20,9 @@ public class NanoBlock {
 
     public static native String byteToWallet(byte[] wallet, int type) throws Exception;
     public static native String nanoBlockToJSON(NanoBlock nanoBlock) throws Exception;
+    public static native String signatureByteToString(byte[] signature) throws Throwable;
+    public static native boolean verifySignatureByteNanoBlock(byte[] nanoBlock) throws Throwable;
+    public static native boolean verifySignatureNanoBlock(NanoBlock nanoBlock) throws Throwable;
     public static native String getBalanceFromByte(byte[] balance, int balanceType) throws Throwable;
     public static native String getBalanceFromNanoBlock(NanoBlock balance, int balanceType) throws Throwable;
     public static native void signByteNanoBlock(byte[] nanoBlock, String privateKey) throws Throwable;
@@ -77,8 +80,8 @@ public class NanoBlock {
         return byteToWallet(this.link, type);
     }
 
-    public String getBlockSignature() {
-        return this.signature.toString();
+    public String getBlockSignature() throws Throwable {
+        return signatureByteToString(this.signature);
     }
 
     public long getWork() {
@@ -121,7 +124,11 @@ public class NanoBlock {
         signNanoBlock(this, privateKey);
     }
 
-    public boolean isBlockSigned() {
-        return (this.signature != null);
+    public boolean isBlockSigned() throws Throwable {
+        if (this.signature == null)
+            return false;
+
+        return verifySignatureNanoBlock(this);
     }
+
 }

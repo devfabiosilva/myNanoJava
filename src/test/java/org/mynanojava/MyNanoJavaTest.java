@@ -10,6 +10,8 @@ import org.mynanojava.exceptions.NanoBlockException;
 import org.mynanojava.exceptions.NanoKeyPairException;
 import org.mynanojava.wallet.NanoKeyPair;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.blockchain.NanoBlock.*;
 import static org.mynanojava.enums.EntropyTypeEnum.*;
@@ -506,15 +508,15 @@ public class MyNanoJavaTest {
         keyPair = fromNanoSeed(NANO_SEED, accountNumber);
         assertEquals(accountNumber, keyPair.getAccountNumber());
         assertEquals("611BCE7922F5FB3A0A9C4ACFE7C9B53AC79DD902A2CE0A56830052B9F4A84FB1", keyPair.getPrivateKey());
-        assertEquals("207BD39D3BF75850FB9F14F477C981593353EB501D39ED4BA06C79C21652BDBF", keyPair.getPublicKey(HEX_ACCOUNT));
-        assertEquals("xrb_1a5utggmqxtrc5xsy79ngz6r4pbmchoo19bsxo7t1u5srad77hfzf6ugxwws", keyPair.getPublicKey(XRB_PREFIX));
-        assertEquals("nano_1a5utggmqxtrc5xsy79ngz6r4pbmchoo19bsxo7t1u5srad77hfzf6ugxwws", keyPair.getPublicKey(NANO_PREFIX));
+        assertEquals("207BD39D3BF75850FB9F14F477C981593353EB501D39ED4BA06C79C21652BDBF", keyPair.getAccount(HEX_ACCOUNT));
+        assertEquals("xrb_1a5utggmqxtrc5xsy79ngz6r4pbmchoo19bsxo7t1u5srad77hfzf6ugxwws", keyPair.getAccount(XRB_PREFIX));
+        assertEquals("nano_1a5utggmqxtrc5xsy79ngz6r4pbmchoo19bsxo7t1u5srad77hfzf6ugxwws", keyPair.getAccount(NANO_PREFIX));
         System.out.println("Account " + keyPair.getAccountNumber());
 
         System.out.println("Private key " + keyPair.getPrivateKey());
-        System.out.println("Public key " + keyPair.getPublicKey(HEX_ACCOUNT));
-        System.out.println("Nano account " + keyPair.getPublicKey(NANO_PREFIX));
-        System.out.println("Nano account (XRB) " + keyPair.getPublicKey(XRB_PREFIX));
+        System.out.println("Public key " + keyPair.getAccount(HEX_ACCOUNT));
+        System.out.println("Nano account " + keyPair.getAccount(NANO_PREFIX));
+        System.out.println("Nano account (XRB) " + keyPair.getAccount(XRB_PREFIX));
 
         NanoKeyPair keyPair1 = null;
         final String NANO_SEED2 = "75E73258DB2A3DE79360A22A2D26B75576ADB58C8FDFF063FF5D95D16492ACFC";
@@ -555,16 +557,16 @@ public class MyNanoJavaTest {
         final String NANO_SEED = "7C34146F66B0923736E71650A9EEC3D6D31B39F649F27EE974BFA75C0ED04C72";
 
         NanoKeyPair keyPair;
-        long accountNumber = 37000;
+        long accountNumber = 37000; // Bitcoin price in USD jan 5 2021
 
         keyPair = fromNanoSeed(NANO_SEED, accountNumber);
         assertEquals(accountNumber, keyPair.getAccountNumber());
-        System.out.println("Public key: " + keyPair.getPublicKey(HEX_ACCOUNT));
-        System.out.println("Account: " + keyPair.getPublicKey(NANO_PREFIX));
+        System.out.println("Public key: " + keyPair.getAccount(HEX_ACCOUNT));
+        System.out.println("Account: " + keyPair.getAccount(NANO_PREFIX));
         System.out.println("Private key: " + keyPair.getPrivateKey());
         System.out.println("Creating Nano Block ...");
         byte[] block = myNanoJava.nano_create_block(
-                keyPair.getPublicKey(NANO_PREFIX),
+                keyPair.getAccount(NANO_PREFIX),
                 "22E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
                 "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
                 "1.8",
@@ -576,8 +578,53 @@ public class MyNanoJavaTest {
         System.out.println("Block to json");
         System.out.println(myNanoJava.nanoBlockToJSON(block));
         signByteNanoBlock(block, keyPair.getPrivateKey());
-
         System.out.println("Block to json (signed)");
         System.out.println(myNanoJava.nanoBlockToJSON(block));
+        assertTrue(verifySignatureByteNanoBlock(block));
+    }
+
+    @Test
+    public void signNanoBlockTest() throws Throwable {
+        final String NANO_SEED = "9B34126F69B0923736E71650A90EC3D6131B391649F27EA874BFA75C8ED04C30";
+
+        NanoKeyPair keyPair;
+        long accountNumber = 40500; // Bitcoin price in USD in jan 08 2021
+
+        keyPair = fromNanoSeed(NANO_SEED, accountNumber);
+        assertEquals(accountNumber, keyPair.getAccountNumber());
+        System.out.println("Public key: " + keyPair.getAccount(HEX_ACCOUNT));
+        System.out.println("Account: " + keyPair.getAccount(NANO_PREFIX));
+        System.out.println("Private key: " + keyPair.getPrivateKey());
+        System.out.println("Creating Nano Block ...");
+        NanoBlock nanoBlock = new MyNanoJava().nanoCreateBlock(
+                keyPair.getAccount(NANO_PREFIX),
+                "21E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "56.18287166255143341",
+                NANO_BALANCE_REAL.getValue(),
+                "1.38716625534773",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_SEND.getValue()
+        );
+        assertNull(nanoBlock.getBlockSignature());
+        System.out.println(nanoBlock.toJson());
+        nanoBlock.sign(keyPair.getPrivateKey());
+        assertNotNull(nanoBlock.getBlockSignature());
+        assertTrue(nanoBlock.isBlockSigned());
+        System.out.println(nanoBlock.getBlockSignature());
+        System.out.println(nanoBlock.toJson());
+        byte[] sig = null;
+        try {
+            signatureByteToString(sig);
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoBlockException);
+            assertEquals(170, ((NanoBlockException) e).getError());
+            assertEquals("signatureByteToString: Missing ByteArray Signature", e.getMessage());
+        } finally {
+            assertNull(sig);
+        }
+
+
     }
 }

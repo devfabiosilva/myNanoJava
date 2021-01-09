@@ -22,7 +22,7 @@ public class NanoKeyPair {
         return this.privateKey;
     }
 
-    public String getPublicKey(NanoAccountEnum type) throws Throwable {
+    public String getAccount(NanoAccountEnum type) throws Throwable {
         return byteToWallet(this.publicKey, type.getValue());
     }
 
