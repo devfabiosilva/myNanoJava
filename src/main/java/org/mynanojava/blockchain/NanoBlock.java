@@ -32,7 +32,7 @@ public class NanoBlock {
     public static native String generateNanoSeed(int entropy) throws Throwable;
     public static native NanoKeyPair fromNanoSeed(String seed, long number) throws Throwable;
     public static native byte[] getByteNanoBlockHash(byte[] nanoBlock) throws Throwable;
-    public static native byte [] getNanoBlockHash(NanoBlock nanoBlock) throws Throwable;
+    public static native byte[] getNanoBlockHash(NanoBlock nanoBlock) throws Throwable;
 
     public static final long THRESHOLD_RECEIVE = 0xfffffe0000000000L;
     public static final long THRESHOLD_SEND = 0xfffffff800000000L;

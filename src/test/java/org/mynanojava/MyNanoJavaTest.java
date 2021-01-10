@@ -3,6 +3,7 @@ package org.mynanojava;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mynanojava.bitcoin.Util;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
 import org.mynanojava.exceptions.BalanceException;
@@ -12,6 +13,7 @@ import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.blockchain.NanoBlock.*;
+import static org.mynanojava.enums.BitcoinVersionBytesEnum.*;
 import static org.mynanojava.enums.EntropyTypeEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.*;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_RECEIVE;
@@ -626,7 +628,7 @@ public class MyNanoJavaTest {
 
     @Test
     public void proofOfWorkTest() throws Throwable {
-        final String NANO_SEED = "0C34126F69B0923736E7F651A97EC3D6131B592649F27EA874BFA75A8ED04C30";
+        final String NANO_SEED = "1D41F26F69B0923736E7F651A97EC3D6131B592649F27EA874BFA75A8ED04C30";
 
         NanoKeyPair keyPair;
         long accountNumber = 41179; // Bitcoin price in USD in jan 10 2021
@@ -649,8 +651,9 @@ public class MyNanoJavaTest {
                 VALUE_TO_RECEIVE.getValue()
         );
         System.out.println("Hash: " +  nanoBlock.getBlockHash());
+        System.out.println("Threshold: " + THRESHOLD_SEND);
         try {
-            nanoBlock.calculateWork(THRESHOLD_RECEIVE, 4);
+            nanoBlock.calculateWork(THRESHOLD_SEND, 4);
             fail("Proof of Work should fail without signature");
         } catch (Throwable e) {
             assertTrue(e instanceof NanoBlockException);
@@ -661,11 +664,20 @@ public class MyNanoJavaTest {
         System.out.println("Singning the block ...");
         nanoBlock.sign(keyPair.getPrivateKey());
         assertTrue(nanoBlock.isBlockSigned());
-        System.out.println("Calculating Proof of Work in receive amout case...");
-        nanoBlock.calculateWork(THRESHOLD_RECEIVE, 4);
+        System.out.println("Calculating Proof of Work in receive amount case...");
+        nanoBlock.calculateWork(THRESHOLD_SEND, 4);
         assertTrue(nanoBlock.getWork() != 0);
         System.out.println("WORK:"+nanoBlock.getWork());
-
         System.out.println(nanoBlock.toJson());
+    }
+
+    @Test
+    public void bitcoinUtilCreateMasterKey() throws Throwable {
+        String masterKey = Util.generateMasterKey(TESTNET_PRIVATE.getValue(), GOOD.getValue());
+        assertNotNull(masterKey);
+        assertTrue(masterKey.contains("tprv"));
+        String masterKey2 = Util.generateMasterKey(MAINNET_PRIVATE.getValue(), GOOD.getValue());
+        assertTrue(masterKey2.contains("xprv"));
+        System.out.println(masterKey2);
     }
 }
