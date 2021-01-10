@@ -61,6 +61,7 @@ public class MyNanoJava {
     ) throws Exception;
     public native String p2powToJson(byte[] p2powBlock) throws Exception;
     public native long nanoPoW(String hash, Long threshold, int numberOfThreads) throws Exception;
+    public native long nanoBytePoW(byte[] hash, long threshold, int numberOfThreads) throws Throwable;
     public native byte[] nanoBlockToByte(NanoBlock nanoBlock) throws Exception;
     public native NanoBlock byteToNanoBlock(byte[] nanoBlock, int blockNumber) throws Exception;
 

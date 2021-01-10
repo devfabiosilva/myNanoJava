@@ -10,8 +10,6 @@ import org.mynanojava.exceptions.NanoBlockException;
 import org.mynanojava.exceptions.NanoKeyPairException;
 import org.mynanojava.wallet.NanoKeyPair;
 
-import java.nio.charset.StandardCharsets;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.blockchain.NanoBlock.*;
 import static org.mynanojava.enums.EntropyTypeEnum.*;
@@ -624,7 +622,50 @@ public class MyNanoJavaTest {
         } finally {
             assertNull(sig);
         }
+    }
 
+    @Test
+    public void proofOfWorkTest() throws Throwable {
+        final String NANO_SEED = "0C34126F69B0923736E7F651A97EC3D6131B592649F27EA874BFA75A8ED04C30";
 
+        NanoKeyPair keyPair;
+        long accountNumber = 41179; // Bitcoin price in USD in jan 10 2021
+
+        keyPair = fromNanoSeed(NANO_SEED, accountNumber);
+        assertEquals(accountNumber, keyPair.getAccountNumber());
+        System.out.println("Public key: " + keyPair.getAccount(HEX_ACCOUNT));
+        System.out.println("Account: " + keyPair.getAccount(NANO_PREFIX));
+        System.out.println("Private key: " + keyPair.getPrivateKey());
+        System.out.println("Creating Nano Block ...");
+        NanoBlock nanoBlock = new MyNanoJava().nanoCreateBlock(
+                keyPair.getAccount(NANO_PREFIX),
+                "21E0C2705A91D2DFB28F65D921E93A70CDF6599FEA232D9496FA759D9C2DE4C8",
+                "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
+                "56.1828716625514334199100199",
+                NANO_BALANCE_REAL.getValue(),
+                "1289.3871662553477319277266",
+                NANO_VALUE_TO_SEND_OR_RECEIVE_REAL.getValue(),
+                "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                VALUE_TO_RECEIVE.getValue()
+        );
+        System.out.println("Hash: " +  nanoBlock.getBlockHash());
+        try {
+            nanoBlock.calculateWork(THRESHOLD_RECEIVE, 4);
+            fail("Proof of Work should fail without signature");
+        } catch (Throwable e) {
+            assertTrue(e instanceof NanoBlockException);
+            assertEquals(12621, ((NanoBlockException) e).getError());
+            assertEquals("f_verify_signed_block @ verifySignatureNanoBlock: Error when verify Nano Block signature 12621",
+                    e.getMessage());
+        }
+        System.out.println("Singning the block ...");
+        nanoBlock.sign(keyPair.getPrivateKey());
+        assertTrue(nanoBlock.isBlockSigned());
+        System.out.println("Calculating Proof of Work in receive amout case...");
+        nanoBlock.calculateWork(THRESHOLD_RECEIVE, 4);
+        assertTrue(nanoBlock.getWork() != 0);
+        System.out.println("WORK:"+nanoBlock.getWork());
+
+        System.out.println(nanoBlock.toJson());
     }
 }

@@ -18,6 +18,7 @@ jint throwNewException(JNIEnv *, const char *, const char *, int);
 #define CANT_FIND_NANO_BLOCK_ERROR "%s: Can't find class org.mynanojava.blockchain.NanoBlock"
 #define NANO_KEY_PAIR_EXCEPTION_CLASS "org/mynanojava/exceptions/NanoKeyPairException"
 #define NANO_KEY_PAIR_CLASS_PATH "org/mynanojava/wallet/NanoKeyPair"
+#define THROW_NANO_BLOCK_EXCEPTION(env, msg, err) throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err)
 
 static char msg[768];
 
@@ -449,26 +450,26 @@ int setByteArrayFieldId_util(
    jbyteArray byte_array;
 
    if (!(field=(*env)->GetFieldID(env, class, fieldId, NANO_JAVA_BYTE_ARRAY_TYPE)))
-      return -40;
+      return -45;
 
    if (!(byte_array=(*env)->NewByteArray(env, c_byte_array_sz)))
-      return -41;
+      return -46;
 
    err=0;
    (*env)->SetByteArrayRegion(env, byte_array, 0, c_byte_array_sz, (const jbyte *)c_byte_array);
    if ((*env)->ExceptionCheck(env)) {
-      err=-42;
+      err=-47;
       goto setByteArrayFieldId_util_EXIT1;
    }
 
    (*env)->SetObjectField(env, thisObject, field, byte_array);
    if ((*env)->ExceptionCheck(env))
-      err=-43;
+      err=-48;
 
 setByteArrayFieldId_util_EXIT1:
    (*env)->DeleteLocalRef(env, byte_array);
    if ((*env)->ExceptionCheck(env))
-      err=-44;
+      err=-49;
 
    return err;
 }
@@ -863,12 +864,13 @@ int java_NanoBlock_2_C_NanoBlock_util(F_BLOCK_TRANSFER **nano_block, JNIEnv *env
       goto java_NanoBlock_2_C_NanoBlock_util_EXIT1;
    }
 
-   if ((err=getIntFieldUtil((jint *)&(*nano_block)->prefixes, env, nanoBlock, jNanoBlockClass, NANO_BLK_PREFIXES))) {
+   if ((err=getIntFieldUtil((jint *)msg2, env, nanoBlock, jNanoBlockClass, NANO_BLK_PREFIXES))) {
       sprintf(msg2, "getIntFieldUtil @ %s", function_name);
       sprintf(msg, MY_NANO_EMBEDDED_ERROR, msg2, err);
       goto java_NanoBlock_2_C_NanoBlock_util_EXIT1;
    }
 
+   (*nano_block)->prefixes=(uint8_t)*((jint *)msg2);
    memset((*nano_block)->preamble, 0, 31);
    (*nano_block)->preamble[31]=0x06;
 
@@ -991,6 +993,43 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoPoW(JNIEnv *env, jobj
 
 Java_org_mynanojava_MyNanoJava_nanoPoW_EXIT1:
    (*env)->ReleaseStringUTFChars(env, jHash, c_hash);
+
+   return (jlong)result;
+}
+
+/*
+ * Class:     org_mynanojava_MyNanoJava
+ * Method:    nanoBytePoW
+ * Signature: ([BJI)J
+ */
+JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoBytePoW(JNIEnv *env, jobject thisObject, jbyteArray hash, jlong threshold, jint numberOfThreads)
+{
+   int err;
+   jbyte *c_hash;
+   uint64_t c_threshold, result;
+   jsize jSize;
+
+   jSize=(*env)->GetArrayLength(env, hash);
+   if ((*env)->ExceptionCheck(env)) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "nanoBytePoW: Can't calculate hash size in ByteArray", 236);
+      return -8;
+   }
+
+   if (!(c_hash=(*env)->GetByteArrayElements(env, hash, NULL))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "getByteNanoBlockHash: Can't get hash in ByteArray", 237);
+      return -9;
+   }
+
+   f_random_attach(gen_rand_no_entropy_util);
+
+   if ((err=f_nano_pow(&result, (unsigned char *)c_hash, (uint64_t)c_threshold, (int)numberOfThreads))) {
+      result=-10;
+      THROW_NANO_BLOCK_EXCEPTION(env, "f_nano_pow @ nanoBytePoW: Can't calculate PoW", 238);
+   }
+
+   f_random_detach();
+
+   (*env)->ReleaseByteArrayElements(env, hash, c_hash, JNI_ABORT);
 
    return (jlong)result;
 }
@@ -1196,7 +1235,7 @@ Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromByte_EXIT1:
  * Method:    getBalanceFromNanoBlock
  * Signature: (Lorg/mynanojava/blockchain/NanoBlock;I)Ljava/lang/String;
  */
-#define THROW_NANO_BLOCK_EXCEPTION(env, msg, err) throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err)
+
 JNIEXPORT jstring JNICALL Java_org_mynanojava_blockchain_NanoBlock_getBalanceFromNanoBlock(JNIEnv *env, jobject thisObj, jobject nanoBlock, jint balanceType)
 {
    int err;
@@ -1459,8 +1498,6 @@ JNIEXPORT jboolean JNICALL Java_org_mynanojava_blockchain_NanoBlock_verifySignat
       goto Java_org_mynanojava_blockchain_NanoBlock_verifySignatureByteNanoBlock_EXIT1;
    }
 
-   res=JNI_FALSE;
-
    if ((err=f_verify_signed_block((F_BLOCK_TRANSFER *)c_byte_array))>0) {
       sprintf(msg, "f_verify_signed_block @ verifySignatureByteNanoBlock: Error when verify Nano Block signature %d", err);
       THROW_NANO_BLOCK_EXCEPTION(env, msg, err);
@@ -1642,6 +1679,103 @@ Java_org_mynanojava_blockchain_NanoBlock_fromNanoSeed_EXIT2:
    (*env)->ReleaseStringUTFChars(env, nanoSeed, c_nano_seed);
 
    return res;
+}
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    getByteNanoBlockHash
+ * Signature: ([B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_blockchain_NanoBlock_getByteNanoBlockHash(JNIEnv *env, jobject thisObj, jbyteArray nanoBlock)
+{
+   int err;
+   jbyteArray outByteArray;
+   jbyte *c_byte_array;
+   jsize jSize;
+   uint8_t *hash;
+
+   if (!nanoBlock) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "getByteNanoBlockHash: Missing Nano Block", 226);
+      return NULL;
+   }
+
+   if (!(c_byte_array=(*env)->GetByteArrayElements(env, nanoBlock, NULL))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "getByteNanoBlockHash: Can't get Nano Block in Byte Array", 227);
+      return NULL;
+   }
+
+   outByteArray=NULL;
+
+   jSize=(*env)->GetArrayLength(env, nanoBlock);
+   if ((*env)->ExceptionCheck(env)) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "getByteNanoBlockHash: Can't calculate size of the Nano block", 228);
+      goto Java_org_mynanojava_blockchain_NanoBlock_getByteNanoBlockHash_EXIT1;
+   }
+
+   if (jSize!=sizeof(F_BLOCK_TRANSFER)) {
+      sprintf(msg, "getByteNanoBlockHash: Invalid Nano block size %d", jSize);
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, 229);
+      goto Java_org_mynanojava_blockchain_NanoBlock_getByteNanoBlockHash_EXIT1;
+   }
+
+   if ((err=f_nano_get_block_hash(hash=((uint8_t *)msg+128), (F_BLOCK_TRANSFER *)c_byte_array))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "f_nano_get_block_hash @ getByteNanoBlockHash: Unable to get Nano Block Hash", err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_getByteNanoBlockHash_EXIT1;
+   }
+
+   if (!(outByteArray=(*env)->NewByteArray(env, 32))) {
+      throwError(env, "getByteNanoBlockHash: Can't create JNI byte array");
+      goto Java_org_mynanojava_blockchain_NanoBlock_getByteNanoBlockHash_EXIT1;
+   }
+
+   (*env)->SetByteArrayRegion(env, outByteArray, 0, 32, (const jbyte *)hash);
+
+Java_org_mynanojava_blockchain_NanoBlock_getByteNanoBlockHash_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, nanoBlock, c_byte_array, JNI_ABORT);
+
+   return outByteArray;
+}
+
+/*
+ * Class:     org_mynanojava_blockchain_NanoBlock
+ * Method:    getNanoBlockHash
+ * Signature: (Lorg/mynanojava/blockchain/NanoBlock;)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_blockchain_NanoBlock_getNanoBlockHash(JNIEnv *env, jobject thisObj, jobject nanoBlock)
+{
+   int err;
+   jbyteArray outByteArray;
+   uint8_t *hash;
+   F_BLOCK_TRANSFER *nano_block;
+
+   if (!nanoBlock) {
+      THROW_NANO_BLOCK_EXCEPTION(env, "getNanoBlockHash: Missing Nano Block", 225);
+      return NULL;
+   }
+
+   if ((err=java_NanoBlock_2_C_NanoBlock_util(&nano_block, env, nanoBlock, "getNanoBlockHash"))) {
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, err);
+      return NULL;
+   }
+
+   if ((err=f_nano_get_block_hash(hash=((uint8_t *)msg+128), nano_block))) {
+      outByteArray=NULL;
+      THROW_NANO_BLOCK_EXCEPTION(env, "f_nano_get_block_hash @ getNanoBlockHash: Unable to get Nano Block Hash", err);
+      goto Java_org_mynanojava_blockchain_NanoBlock_getNanoBlockHash_EXIT1;
+   }
+
+   if (!(outByteArray=(*env)->NewByteArray(env, 32))) {
+      throwError(env, "getNanoBlockHash: Can't create JNI byte array");
+      goto Java_org_mynanojava_blockchain_NanoBlock_getNanoBlockHash_EXIT1;
+   }
+
+   (*env)->SetByteArrayRegion(env, outByteArray, 0, 32, (const jbyte *)hash);
+
+Java_org_mynanojava_blockchain_NanoBlock_getNanoBlockHash_EXIT1:
+   memset(nano_block, 0, sizeof(F_BLOCK_TRANSFER));
+   free(nano_block);
+
+   return outByteArray;
 }
 
 #define NANO_JAVA_INIT_THROWABLE_WITH_CODE(class) (*env)->GetMethodID(env, class, "<init>", "(Ljava/lang/String;I)V")

@@ -1,8 +1,10 @@
 package org.mynanojava.blockchain;
 
+import org.mynanojava.MyNanoJava;
 import org.mynanojava.enums.NanoAccountEnum;
 import org.mynanojava.enums.NanoJavaEnumBalanceType;
 import org.mynanojava.enums.NanoJavaEnumPrefix;
+import org.mynanojava.exceptions.NanoBlockException;
 import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.mynanojava.enums.NanoAccountEnum.*;
@@ -29,6 +31,11 @@ public class NanoBlock {
     public static native void signNanoBlock(NanoBlock nanoBlock, String privateKey) throws Throwable;
     public static native String generateNanoSeed(int entropy) throws Throwable;
     public static native NanoKeyPair fromNanoSeed(String seed, long number) throws Throwable;
+    public static native byte[] getByteNanoBlockHash(byte[] nanoBlock) throws Throwable;
+    public static native byte [] getNanoBlockHash(NanoBlock nanoBlock) throws Throwable;
+
+    public static final long THRESHOLD_RECEIVE = 0xfffffe0000000000L;
+    public static final long THRESHOLD_SEND = 0xfffffff800000000L;
 
     public String getAccount(NanoAccountEnum accountType) throws Exception {
         int type = accountType.getValue();
@@ -84,6 +91,13 @@ public class NanoBlock {
         return signatureByteToString(this.signature);
     }
 
+    public void calculateWork(long threshold, int numberOfThreads) throws Throwable {
+        if (!isBlockSigned())
+            throw new NanoBlockException("Nano Block is not signed yet", -2);
+
+        this.work = new MyNanoJava().nanoBytePoW(getNanoBlockHash(this), threshold, numberOfThreads);
+    }
+
     public long getWork() {
         return this.work;
     }
@@ -114,6 +128,10 @@ public class NanoBlock {
 
     public byte[] getByteSignature() {
         return this.signature;
+    }
+
+    public String getBlockHash() throws Throwable {
+        return byteToWallet(getNanoBlockHash(this), HEX_ACCOUNT.getValue());
     }
 
     public String toJson() throws Exception {
