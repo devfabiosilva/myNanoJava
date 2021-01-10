@@ -1,26 +1,17 @@
-#include <jni.h>
-#include <f_nano_crypto_util.h>
+#include <nano_java_common.h>
+
 //java -Djava.library.path=. -jar
 ////https://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //https://developer.android.com/training/articles/perf-jni?hl=pt-br
-jint throwNewException(JNIEnv *, const char *, const char *, int);
-#define NANO_JAVA_LANG_EXCEPTION_CLASS "java/lang/Exception"
+
 #define NANO_BLOCK_EXCEPTION_CLASS "org/mynanojava/exceptions/NanoBlockException"
 #define BALANCE_EXCEPTION_CLASS "org/mynanojava/exceptions/BalanceException"
-#define throwError(env, msg) throwNewException(env, NANO_JAVA_LANG_EXCEPTION_CLASS, msg, 0)
 #define MY_NANO_EMBEDDED_ERROR "myNanoEmbedded C library error in function \"%s\" %d"
-#define JAVA_ERR_PARSE_UTF8_STRING "Error on parsing UTF-8 string. Maybe internal error or OutOfMemory"
 #define NANO_BLOCK_CLASS_PATH "org/mynanojava/blockchain/NanoBlock"
-#define NANO_JAVA_GET_INIT_METHOD(class) (*env)->GetMethodID(env, class, "<init>", "()V")
-#define NANO_JAVA_BYTE_ARRAY_TYPE "[B"
-#define NANO_JAVA_LONG_TYPE "J"
-#define NANO_JAVA_INT_TYPE "I"
 #define CANT_FIND_NANO_BLOCK_ERROR "%s: Can't find class org.mynanojava.blockchain.NanoBlock"
 #define NANO_KEY_PAIR_EXCEPTION_CLASS "org/mynanojava/exceptions/NanoKeyPairException"
 #define NANO_KEY_PAIR_CLASS_PATH "org/mynanojava/wallet/NanoKeyPair"
 #define THROW_NANO_BLOCK_EXCEPTION(env, msg, err) throwNewException(env, NANO_BLOCK_EXCEPTION_CLASS, msg, err)
-
-static char msg[768];
 
 void gen_rand_no_entropy_util(void *output, size_t output_len)
 {
@@ -1006,7 +997,7 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoBytePoW(JNIEnv *env, 
 {
    int err;
    jbyte *c_hash;
-   uint64_t c_threshold, result;
+   uint64_t result;
    jsize jSize;
 
    jSize=(*env)->GetArrayLength(env, hash);
@@ -1022,7 +1013,7 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoBytePoW(JNIEnv *env, 
 
    f_random_attach(gen_rand_no_entropy_util);
 
-   if ((err=f_nano_pow(&result, (unsigned char *)c_hash, (uint64_t)c_threshold, (int)numberOfThreads))) {
+   if ((err=f_nano_pow(&result, (unsigned char *)c_hash, (uint64_t)threshold, (int)numberOfThreads))) {
       result=-10;
       THROW_NANO_BLOCK_EXCEPTION(env, "f_nano_pow @ nanoBytePoW: Can't calculate PoW", 238);
    }
