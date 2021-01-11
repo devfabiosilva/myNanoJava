@@ -8,7 +8,7 @@ public class BitcoinUtilException extends Throwable{
         this.error= -1;
     }
 
-    BitcoinUtilException(String message, int error) {
+    public BitcoinUtilException(String message, int error) {
         super(message);
         this.error = error;
     }

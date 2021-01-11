@@ -3,6 +3,7 @@ package org.mynanojava;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mynanojava.bitcoin.BitcoinWallet;
 import org.mynanojava.bitcoin.Util;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
@@ -676,8 +677,16 @@ public class MyNanoJavaTest {
         String masterKey = Util.generateMasterKey(TESTNET_PRIVATE.getValue(), GOOD.getValue());
         assertNotNull(masterKey);
         assertTrue(masterKey.contains("tprv"));
+        System.out.println(masterKey);
         String masterKey2 = Util.generateMasterKey(MAINNET_PRIVATE.getValue(), GOOD.getValue());
         assertTrue(masterKey2.contains("xprv"));
         System.out.println(masterKey2);
+    }
+
+    @Test
+    public void bitcoinWalletCreateTest() throws Throwable {
+        BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE.getValue(), GOOD.getValue());
+        assertNotNull(bitcoinWallet);
+        System.out.println(bitcoinWallet.xPrivateKey());
     }
 }
