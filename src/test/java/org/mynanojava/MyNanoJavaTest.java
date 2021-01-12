@@ -13,8 +13,11 @@ import org.mynanojava.exceptions.NanoKeyPairException;
 import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mynanojava.bitcoin.Util.privateKeyToWIF;
 import static org.mynanojava.blockchain.NanoBlock.*;
 import static org.mynanojava.enums.BitcoinVersionBytesEnum.*;
+import static org.mynanojava.enums.BitcoinWIFTypeEnum.BITCOIN_WIF_MAINNET;
+import static org.mynanojava.enums.BitcoinWIFTypeEnum.BITCOIN_WIF_TESTNET;
 import static org.mynanojava.enums.EntropyTypeEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumBalanceType.*;
 import static org.mynanojava.enums.NanoJavaEnumDirection.VALUE_TO_RECEIVE;
@@ -688,5 +691,17 @@ public class MyNanoJavaTest {
         BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE.getValue(), GOOD.getValue());
         assertNotNull(bitcoinWallet);
         System.out.println(bitcoinWallet.xPrivateKey());
+        System.out.println(
+                privateKeyToWIF(
+                        "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                        BITCOIN_WIF_MAINNET.getValue()
+                )
+        );
+        System.out.println(
+                privateKeyToWIF(
+                        "24E0C2705A91D2DFB28A25D921E93A71CDF6599FEA232D8496FA759D9C2DE4C8",
+                        BITCOIN_WIF_TESTNET.getValue()
+                )
+        );
     }
 }

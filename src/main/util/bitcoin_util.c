@@ -20,7 +20,7 @@ int generateMasterKey_util(BITCOIN_SERIALIZE *master_key, int versionBytes, int 
 
    f_random_attach(gen_rand_no_entropy_util);
 
-   if ((err=f_generate_master_key(master_key=(BITCOIN_SERIALIZE *)msg, (size_t)versionBytes, entropy_level)))
+   if ((err=f_generate_master_key(master_key, (size_t)versionBytes, entropy_level)))
       sprintf(msg, "f_generate_master_key @ %s: Can't generate master key %d", function_name, err);
 
    f_random_detach();
@@ -120,7 +120,57 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_toBase58(JNIEnv *env,
    } else if (!(res=(*env)->NewStringUTF(env, (const char *)msg)))
       throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
 
+   memset(msg, 0, sizeof(msg));
    (*env)->ReleaseByteArrayElements(env, val, c_val, JNI_ABORT);
+   return res;
+}
+
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    privateKeyToWIF
+ * Signature: (Ljava/lang/String;I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_privateKeyToWIF(JNIEnv *env, jobject thisObj, jstring privateKey, jint wifType)
+{
+   int err;
+   const char *c_private_key;
+   char *dest;
+   jbyteArray res;
+
+   if (!privateKey) {
+      THROW_BITCOIN_UTIL_EXCEPTION("privateKeyByteToWIF: Missing private key", 5013);
+      return NULL;
+   }
+
+   if ((F_BITCOIN_WIF_MAINNET!=wifType)&&(F_BITCOIN_WIF_TESTNET!=wifType)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("privateKeyByteToWIF: Unknown WIF type", 5014);
+      return NULL;
+   }
+
+   if (!(c_private_key=(*env)->GetStringUTFChars(env, privateKey, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("privateKeyByteToWIF: Can't parse Private Key to C char", 5015);
+      return NULL;
+   }
+
+   res=NULL;
+
+   if ((err=array32bytes_str_to_hex_util((uint8_t *)msg, c_private_key))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("privateKeyByteToWIF: Invalid private key size", err);
+      goto Java_org_mynanojava_bitcoin_Util_privateKeyByteToWIF_EXIT2;
+   }
+
+   if ((err=f_private_key_to_wif(dest=(msg+(sizeof(msg)>>1)), sizeof(msg)>>1, NULL, (uint8_t)wifType, (uint8_t *)msg))) {
+      sprintf(msg, "f_private_key_to_wif @ privateKeyByteToWIF: Can't parse private key to Byte Array WIF %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+   } else if (!(res=(*env)->NewStringUTF(env, (const char *)dest)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+Java_org_mynanojava_bitcoin_Util_privateKeyByteToWIF_EXIT2:
+   memset(msg, 0, sizeof(msg));
+
+Java_org_mynanojava_bitcoin_Util_privateKeyByteToWIF_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, privateKey, c_private_key);
+
    return res;
 }
 

@@ -13,4 +13,5 @@ jint throwNewException(JNIEnv *, const char *, const char *, int);
 static char msg[768];
 
 void gen_rand_no_entropy_util(void *, size_t);
+int array32bytes_str_to_hex_util(uint8_t *, const char *);
 
