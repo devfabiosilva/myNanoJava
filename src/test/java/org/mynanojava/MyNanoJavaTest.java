@@ -8,11 +8,13 @@ import org.mynanojava.bitcoin.Util;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
 import org.mynanojava.exceptions.BalanceException;
+import org.mynanojava.exceptions.BitcoinUtilException;
 import org.mynanojava.exceptions.NanoBlockException;
 import org.mynanojava.exceptions.NanoKeyPairException;
 import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mynanojava.bitcoin.Util.byteMasterPrivateKeyToWIF;
 import static org.mynanojava.bitcoin.Util.privateKeyToWIF;
 import static org.mynanojava.blockchain.NanoBlock.*;
 import static org.mynanojava.enums.BitcoinVersionBytesEnum.*;
@@ -703,5 +705,21 @@ public class MyNanoJavaTest {
                         BITCOIN_WIF_TESTNET.getValue()
                 )
         );
+
+        System.out.println(bitcoinWallet.toWIF(28717));
+        bitcoinWallet = new BitcoinWallet(TESTNET_PRIVATE.getValue(), GOOD.getValue());
+        System.out.println(bitcoinWallet.toWIF(1627));
+
+        String wif = null;
+        try {
+            wif = byteMasterPrivateKeyToWIF(null, 0);
+        } catch (Throwable e) {
+            assertTrue(e instanceof BitcoinUtilException);
+            assertEquals("byteMasterPrivateKeyToWIF: Missing master key", e.getMessage());
+            assertEquals(5025, ((BitcoinUtilException) e).getError());
+        } finally {
+            assertNull(wif);
+        }
+
     }
 }

@@ -2,35 +2,33 @@ package org.mynanojava.bitcoin;
 
 import org.mynanojava.exceptions.BitcoinUtilException;
 
-import static org.mynanojava.bitcoin.Util.toBase58;
+import static org.mynanojava.bitcoin.Util.*;
 
 public class BitcoinWallet {
     private byte[] masterPrivateKey = null;
     private byte[] masterPublicKey = null;
     private int index = 0;
-    private byte[] wif = null;
+    private String wif = null;
 
     public BitcoinWallet(int versionBytes, int entropy) throws Throwable {
         this.masterPrivateKey = Util.generateByteMasterKey(versionBytes, entropy);
     }
 
-    public BitcoinWallet(String privateKeyOrPublicKey) {
+    public BitcoinWallet(String privateKeyOrPublicKeyOrWif) {
         //TODO to be implemented
     }
 
-    public String toWIF(int index) throws BitcoinUtilException {
+    public String toWIF(long index) throws Throwable {
         if (index < 0)
             throw new BitcoinUtilException("WIF error. Invalid index", -182);
 
         if (this.wif != null) {
             if (index > 0)
                 throw new BitcoinUtilException("WIF has no index greater than 0", -181);
-        } else if (this.masterPrivateKey != null) {
-            // TODO Implement
-        } else
-            throw new BitcoinUtilException("Wallet fatal.", -183);
-        // TODO to be implemented.
-        return null;
+            return wif;
+        }
+
+        return byteMasterPrivateKeyToWIF(this.masterPrivateKey, index);
     }
 
     public String xPrivateKey() throws Throwable {
@@ -40,9 +38,22 @@ public class BitcoinWallet {
         return toBase58(this.masterPrivateKey);
     }
 
+    public String toBitcoinAddress(long index) throws Throwable {
+        if (index < 0)
+            throw new BitcoinUtilException("Invalid Bitcoin address index", -200);
+
+        if (wif != null) {
+            if (index > 0)
+                throw new BitcoinUtilException("Invalid index", -201);
+
+            return "To be implemented";
+        }
+
+        return byteMasterPrivateKeyToBTC_Address(this.masterPrivateKey, index);
+    }
+
     public void setMasterPrivateKey(String masterPrivateKey) {
         //TODO to be implemented
     }
-
 
 }

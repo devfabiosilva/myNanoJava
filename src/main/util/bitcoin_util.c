@@ -174,3 +174,98 @@ Java_org_mynanojava_bitcoin_Util_privateKeyByteToWIF_EXIT1:
    return res;
 }
 
+// WARNING: 0 if success
+int is_valid_master_key_util(uint8_t *priv_key_type, const uint8_t *master_key)
+{
+   if (memcmp(master_key, F_VERSION_BYTES[(size_t)(*priv_key_type=MAINNET_PRIVATE)], 4))
+      return memcmp(master_key, F_VERSION_BYTES[(size_t)(*priv_key_type=TESTNET_PRIVATE)], 4);
+
+   return 0;
+}
+
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    byteMasterPrivateKeyToWIF
+ * Signature: ([BI)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF(JNIEnv *env, jobject thisObj, jbyteArray masterKey, jlong index)
+{
+   int err;
+   char priv_key_type, *wif;
+   jstring res;
+   jbyte *c_master_key;
+   jsize jSize;
+
+   if (index<0) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToWIF: Invalid. Can't be negative index", 5029);
+      return NULL;
+   }
+
+   if (index>((uint32_t)((int)-1))) {
+      sprintf(msg, "byteMasterPrivateKeyToWIF: Invalid index range = %lu", (unsigned long int)index);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, 5030);
+      return NULL;
+   }
+
+   if (!masterKey) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToWIF: Missing master key", 5025);
+      return NULL;
+   }
+
+   jSize=(*env)->GetArrayLength(env, masterKey);
+   if ((*env)->ExceptionCheck(env)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToWIF: Can't calculate 'masterKey' size", 5026);
+      return NULL;
+   }
+
+   if ((jSize!=sizeof(BITCOIN_SERIALIZE))) {
+      sprintf(msg, "byteMasterPrivateKeyToWIF: Wrong master key size = %d.", (int)jSize);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, 5027);
+      return NULL;
+   }
+
+   if (!(c_master_key=(*env)->GetByteArrayElements(env, masterKey, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToWIF: Can't get 'masterKey' in ByteArray", 5028);
+      return NULL;
+   }
+
+   if (is_valid_master_key_util(&priv_key_type, (const uint8_t *)c_master_key)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("is_valid_master_key_util @ byteMasterPrivateKeyToWIF: It is not a Master Key", 5031);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT1;
+   }
+
+   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, (uint32_t)index, (const void *)c_master_key, 0))) {
+      sprintf(msg, "f_bip32_to_public_key_or_private_key @ byteMasterPrivateKeyToWIF: Can't extract private key from byte master key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT2;
+   }
+
+   if ((err=f_private_key_to_wif(wif=(msg+(sizeof(msg)>>1)), sizeof(msg)>>1, NULL, 
+      (priv_key_type==MAINNET_PRIVATE)?F_BITCOIN_WIF_MAINNET:F_BITCOIN_WIF_TESTNET, (uint8_t *)&msg[1]))) {
+      sprintf(msg, "f_private_key_to_wif @ byteMasterPrivateKeyToWIF: Can't parse index %u from Master Key. Err = %d", (unsigned int)index, err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+   } else if (!(res=(*env)->NewStringUTF(env, (const char *)wif)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT2:
+   memset(msg, 0, sizeof(msg));
+
+Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, masterKey, c_master_key, JNI_ABORT);
+
+   return res;
+}
+
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    byteMasterPrivateKeyToBTC_Address
+ * Signature: ([BJ)Ljava/lang/String;
+ */
+/*
+JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address(JNIEnv *env, jobject thisObj, jbyteArray masterKey, jlong index)
+{
+
+
+}
+*/
+
