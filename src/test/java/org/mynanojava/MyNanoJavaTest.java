@@ -709,6 +709,7 @@ public class MyNanoJavaTest {
         System.out.println(bitcoinWallet.toWIF(28717));
         bitcoinWallet = new BitcoinWallet(TESTNET_PRIVATE.getValue(), GOOD.getValue());
         System.out.println(bitcoinWallet.toWIF(1627));
+        System.out.println();
 
         String wif = null;
         try {

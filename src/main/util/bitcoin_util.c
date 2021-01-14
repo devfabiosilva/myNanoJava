@@ -229,6 +229,8 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyT
       return NULL;
    }
 
+   res=NULL;
+
    if (is_valid_master_key_util(&priv_key_type, (const uint8_t *)c_master_key)) {
       THROW_BITCOIN_UTIL_EXCEPTION("is_valid_master_key_util @ byteMasterPrivateKeyToWIF: It is not a Master Key", 5031);
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT1;
@@ -264,8 +266,9 @@ Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT1:
 /*
 JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address(JNIEnv *env, jobject thisObj, jbyteArray masterKey, jlong index)
 {
-
-
+   int err;
+   jstring res;
+TODO
+   return res;
 }
 */
-
