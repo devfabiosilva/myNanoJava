@@ -690,7 +690,7 @@ public class MyNanoJavaTest {
 
     @Test
     public void bitcoinWalletCreateTest() throws Throwable {
-        BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE.getValue(), GOOD.getValue());
+        BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE, GOOD);
         assertNotNull(bitcoinWallet);
         System.out.println(bitcoinWallet.xPrivateKey());
         System.out.println(
@@ -707,9 +707,10 @@ public class MyNanoJavaTest {
         );
 
         System.out.println(bitcoinWallet.toWIF(28717));
-        bitcoinWallet = new BitcoinWallet(TESTNET_PRIVATE.getValue(), GOOD.getValue());
+        bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE, GOOD);
+        System.out.println("WIF extracted");
         System.out.println(bitcoinWallet.toWIF(1627));
-        System.out.println();
+//        System.out.println(bitcoinWallet.toBitcoinAddress(12));
 
         String wif = null;
         try {
@@ -721,6 +722,18 @@ public class MyNanoJavaTest {
         } finally {
             assertNull(wif);
         }
+    }
 
+    @Test
+    public void extractFromMasterKey() throws Throwable {
+        BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE, GOOD);
+        assertNotNull(bitcoinWallet);
+        System.out.println("Private Key (master): "+bitcoinWallet.xPrivateKey());
+        System.out.println("Public key (master):  "+bitcoinWallet.xPublicKey());
+
+        bitcoinWallet = new BitcoinWallet(TESTNET_PRIVATE, GOOD);
+        assertNotNull(bitcoinWallet);
+        System.out.println("Private Key (master): "+bitcoinWallet.xPrivateKey());
+        System.out.println("Public key (master):  "+bitcoinWallet.xPublicKey());
     }
 }

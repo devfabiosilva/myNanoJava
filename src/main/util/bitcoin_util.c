@@ -257,6 +257,58 @@ Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT1:
 
    return res;
 }
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    byteMasterPrivateKeyToMasterPublicKey
+ * Signature: ([B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToMasterPublicKey(JNIEnv *env , jobject thisObj, jbyteArray masterKey)
+{
+   int err;
+   jbyteArray outByteArray;
+   jbyte *c_master_key;
+
+   if (!masterKey) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToMasterPublicKey: Missing master key", 5040);
+      return NULL;
+   }
+
+   if (!(c_master_key=(*env)->GetByteArrayElements(env, masterKey, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToMasterPublicKey: Unable to get 'masterKey'", 5041);
+      return NULL;
+   }
+
+   if ((err=f_xpriv2xpub((void *)msg, sizeof(msg), NULL, (void *)c_master_key, 0))) {
+      outByteArray=NULL;
+      sprintf(msg, "f_xpriv2xpub @ byteMasterPrivateKeyToMasterPublicKey: Can't extract master public key from master private key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToMasterPublicKey_EXIT1;
+   }
+
+   if ((outByteArray=(*env)->NewByteArray(env, sizeof(BITCOIN_SERIALIZE))))
+      (*env)->SetByteArrayRegion(env, outByteArray, 0, sizeof(BITCOIN_SERIALIZE), (const jbyte *)msg);
+   else
+      throwError(env, "byteMasterPrivateKeyToMasterPublicKey: Can't create JNI byte array to export Bitcoin Master Public Key");
+
+Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToMasterPublicKey_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, masterKey, c_master_key, JNI_ABORT);
+
+   return outByteArray;
+}
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    byteMasterPublicKeyToBTC_Address
+ * Signature: ([BJ)Ljava/lang/String;
+ */
+/*
+JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyToBTC_1Address(JNIEnv *env, jobject thisObj, jbyteArray masterPublicKey, jlong index)
+{
+   int err;
+   jstring res;
+TODO
+   return res;
+}
+*/
 
 /*
  * Class:     org_mynanojava_bitcoin_Util
