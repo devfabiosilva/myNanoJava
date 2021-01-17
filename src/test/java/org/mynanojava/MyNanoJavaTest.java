@@ -7,8 +7,6 @@ import org.mynanojava.bitcoin.BitcoinWallet;
 import org.mynanojava.bitcoin.Util;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
-import org.mynanojava.enums.BitcoinVersionBytesEnum;
-import org.mynanojava.enums.EntropyTypeEnum;
 import org.mynanojava.exceptions.BalanceException;
 import org.mynanojava.exceptions.BitcoinUtilException;
 import org.mynanojava.exceptions.NanoBlockException;
@@ -743,7 +741,7 @@ public class MyNanoJavaTest {
 
     @Test
     public void generateMasterPrivateKeyAndExtractWalletFrom_C_Native_Test() throws Throwable {
-        long walletNumber = 150;
+        long walletNumber = 0;
         byte[] masterKey = generateByteMasterKey(MAINNET_PRIVATE.getValue(), GOOD.getValue());
         assertNotNull(masterKey);
         byte[] masterPublicKey = byteMasterPrivateKeyToMasterPublicKey(masterKey);
@@ -757,6 +755,10 @@ public class MyNanoJavaTest {
         System.out.println("Wallet from master public key " + walletFromMasterPublicKey + " number " + walletNumber);
 
         assertEquals(walletFromMasterPrivateKey, walletFromMasterPublicKey);
-        System.out.println("Private key WIF " + byteMasterPrivateKeyToWIF(masterKey, walletNumber));
+        String wif = byteMasterPrivateKeyToWIF(masterKey, walletNumber);
+        System.out.println("Private key WIF " + wif);
+        String wifToBITCOIN_Address = wifToBTC_Address(wif);
+        System.out.println("WIF to Bitcoin address: " + wifToBITCOIN_Address);
+        assertEquals(walletFromMasterPrivateKey, wifToBITCOIN_Address);
     }
 }

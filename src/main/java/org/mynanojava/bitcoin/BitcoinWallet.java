@@ -55,17 +55,13 @@ public class BitcoinWallet {
             if (index > 0)
                 throw new BitcoinUtilException("Invalid index", -201);
 
-            return "To be implemented";
+            return wifToBTC_Address(wif);
         }
 
         if (this.masterPublicKey == null)
             this.masterPublicKey = byteMasterPrivateKeyToMasterPublicKey(this.masterPrivateKey);
 
         return byteMasterPublicKeyToBTC_Address(this.masterPublicKey, index);
-    }
-
-    public void setMasterPrivateKey(String masterPrivateKey) {
-        //TODO to be implemented
     }
 
 }

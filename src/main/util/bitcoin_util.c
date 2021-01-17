@@ -192,7 +192,7 @@ int is_valid_master_public_key_util(uint8_t *public_key_type, const uint8_t *mas
    return 0;
 }
 
-int prime256v1KeyPairCompressedDynamic_util(f_ecdsa_key_pair **key_pair, uint8_t *private_key)
+int prime256v1KeyPairDynamic_util(f_ecdsa_key_pair **key_pair, uint8_t *private_key, int compress_type)
 {
    int err;
 
@@ -202,13 +202,23 @@ int prime256v1KeyPairCompressedDynamic_util(f_ecdsa_key_pair **key_pair, uint8_t
    (*key_pair)->gid=MBEDTLS_ECP_DP_SECP256K1;
    (*key_pair)->ctx=NULL;
 
-   if ((err=f_gen_ecdsa_key_pair(*key_pair, MBEDTLS_ECP_PF_COMPRESSED, load_master_private_key, (void *)private_key))) {
+   if ((err=f_gen_ecdsa_key_pair(*key_pair, compress_type, load_master_private_key, (void *)private_key))) {
       memset(*key_pair, 0, sizeof(f_ecdsa_key_pair));
       free(*key_pair);
       *key_pair=NULL;
    }
 
    return err;
+}
+
+inline int prime256v1KeyPairUncompressedDynamic_util(f_ecdsa_key_pair **key_pair, uint8_t *private_key)
+{
+   return prime256v1KeyPairDynamic_util(key_pair, private_key, MBEDTLS_ECP_PF_UNCOMPRESSED);
+}
+
+inline int prime256v1KeyPairCompressedDynamic_util(f_ecdsa_key_pair **key_pair, uint8_t *private_key)
+{
+   return prime256v1KeyPairDynamic_util(key_pair, private_key, MBEDTLS_ECP_PF_COMPRESSED);
 }
 
 /*
@@ -457,8 +467,8 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyT
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT2;
    }
 
-   if ((err=prime256v1KeyPairCompressedDynamic_util(&key_pair, (uint8_t *)&msg[1]))) {
-      sprintf(msg, "prime256v1KeyPairDynamic_util @ byteMasterPrivateKeyToBTC_Address: Can't extract public key from private key %d", err);
+   if ((err=prime256v1KeyPairUncompressedDynamic_util(&key_pair, (uint8_t *)&msg[1]))) {
+      sprintf(msg, "prime256v1KeyPairUnompressedDynamic_util @ byteMasterPrivateKeyToBTC_Address: Can't extract public key from private key %d", err);
       THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT2;
    }
@@ -477,6 +487,61 @@ Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT2:
 
 Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT1:
    (*env)->ReleaseByteArrayElements(env, masterKey, c_master_private_key, JNI_ABORT);
+
+   return res;
+}
+
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    wifToBTC_Address
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_wifToBTC_1Address(JNIEnv *env, jobject thisObj, jstring wif)
+{
+   int err;
+   jstring res;
+   const char *c_wif;
+   uint8_t wif_type;
+   f_ecdsa_key_pair *key_pair;
+
+   if (!wif) {
+      THROW_BITCOIN_UTIL_EXCEPTION("wifToBTC_Address: Missing WIF", 5070);
+      return NULL;
+   }
+
+   if (!(c_wif=(*env)->GetStringUTFChars(env, wif, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("wifToBTC_Address: Can't parse WIF to C char", 5071);
+      return NULL;
+   }
+
+   res=NULL;
+
+   if ((err=f_wif_to_private_key((uint8_t *)msg, &wif_type, c_wif))) {
+      sprintf(msg, "f_wif_to_private_key @ wifToBTC_Address: Can't parse Bitcoin WIF to private key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_wifToBTC_1Address_EXIT2;
+   }
+
+   if ((err=prime256v1KeyPairCompressedDynamic_util(&key_pair, (uint8_t *)msg))) {
+      sprintf(msg, "f_wif_to_private_key @ wifToBTC_Address: Can't extract public key from private key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_wifToBTC_1Address_EXIT2;
+   }
+
+   if ((err=f_public_key_to_address(msg, sizeof(msg), NULL, key_pair->public_key, (wif_type==F_BITCOIN_WIF_MAINNET)?F_BITCOIN_P2PKH:F_BITCOIN_T2PKH))) {
+      sprintf(msg, "f_public_key_to_address @ wifToBTC_Address: Can't parse Base58 from public key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+   } else if (!(res=(*env)->NewStringUTF(env, (const char *)msg)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+   memset(key_pair, 0, sizeof(f_ecdsa_key_pair));
+   free(key_pair);
+
+Java_org_mynanojava_bitcoin_Util_wifToBTC_1Address_EXIT2:
+   memset(msg, 0, sizeof(msg));
+
+Java_org_mynanojava_bitcoin_Util_wifToBTC_1Address_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, wif, c_wif);
 
    return res;
 }
