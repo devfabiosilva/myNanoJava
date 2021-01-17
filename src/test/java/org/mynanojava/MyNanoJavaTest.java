@@ -7,6 +7,8 @@ import org.mynanojava.bitcoin.BitcoinWallet;
 import org.mynanojava.bitcoin.Util;
 import org.mynanojava.blockchain.NanoBlock;
 import org.mynanojava.blockchain.P2PoWBlock;
+import org.mynanojava.enums.BitcoinVersionBytesEnum;
+import org.mynanojava.enums.EntropyTypeEnum;
 import org.mynanojava.exceptions.BalanceException;
 import org.mynanojava.exceptions.BitcoinUtilException;
 import org.mynanojava.exceptions.NanoBlockException;
@@ -14,8 +16,7 @@ import org.mynanojava.exceptions.NanoKeyPairException;
 import org.mynanojava.wallet.NanoKeyPair;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mynanojava.bitcoin.Util.byteMasterPrivateKeyToWIF;
-import static org.mynanojava.bitcoin.Util.privateKeyToWIF;
+import static org.mynanojava.bitcoin.Util.*;
 import static org.mynanojava.blockchain.NanoBlock.*;
 import static org.mynanojava.enums.BitcoinVersionBytesEnum.*;
 import static org.mynanojava.enums.BitcoinWIFTypeEnum.BITCOIN_WIF_MAINNET;
@@ -726,14 +727,36 @@ public class MyNanoJavaTest {
 
     @Test
     public void extractFromMasterKey() throws Throwable {
+        int walletNumber = 100;
         BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE, GOOD);
         assertNotNull(bitcoinWallet);
         System.out.println("Private Key (master): "+bitcoinWallet.xPrivateKey());
         System.out.println("Public key (master):  "+bitcoinWallet.xPublicKey());
+        System.out.println("Wallet number: " + walletNumber + " Wallet " + bitcoinWallet.toBitcoinAddress(walletNumber));
 
         bitcoinWallet = new BitcoinWallet(TESTNET_PRIVATE, GOOD);
         assertNotNull(bitcoinWallet);
         System.out.println("Private Key (master): "+bitcoinWallet.xPrivateKey());
         System.out.println("Public key (master):  "+bitcoinWallet.xPublicKey());
+        System.out.println("Wallet number: " + walletNumber + " Wallet " + bitcoinWallet.toBitcoinAddress(walletNumber));
+    }
+
+    @Test
+    public void generateMasterPrivateKeyAndExtractWalletFrom_C_Native_Test() throws Throwable {
+        long walletNumber = 150;
+        byte[] masterKey = generateByteMasterKey(MAINNET_PRIVATE.getValue(), GOOD.getValue());
+        assertNotNull(masterKey);
+        byte[] masterPublicKey = byteMasterPrivateKeyToMasterPublicKey(masterKey);
+        assertNotNull(masterPublicKey);
+        System.out.println("Master private key (Mainnet) = " + toBase58(masterKey));
+        System.out.println("Master public key (Mainnet) = " + toBase58(masterPublicKey));
+        String walletFromMasterPrivateKey = byteMasterPrivateKeyToBTC_Address(masterKey, walletNumber);
+        String walletFromMasterPublicKey = byteMasterPublicKeyToBTC_Address(masterPublicKey, walletNumber);
+
+        System.out.println("Wallet from master private key " + walletFromMasterPrivateKey + " number " + walletNumber);
+        System.out.println("Wallet from master public key " + walletFromMasterPublicKey + " number " + walletNumber);
+
+        assertEquals(walletFromMasterPrivateKey, walletFromMasterPublicKey);
+        System.out.println("Private key WIF " + byteMasterPrivateKeyToWIF(masterKey, walletNumber));
     }
 }

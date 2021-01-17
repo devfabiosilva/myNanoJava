@@ -183,6 +183,34 @@ int is_valid_master_key_util(uint8_t *priv_key_type, const uint8_t *master_key)
    return 0;
 }
 
+// WARNING: 0 if success
+int is_valid_master_public_key_util(uint8_t *public_key_type, const uint8_t *master_public_key)
+{
+   if (memcmp(master_public_key, F_VERSION_BYTES[(size_t)(*public_key_type=TESTNET_PUBLIC)], 4))
+      return memcmp(master_public_key, F_VERSION_BYTES[(size_t)(*public_key_type=MAINNET_PUBLIC)], 4);
+
+   return 0;
+}
+
+int prime256v1KeyPairCompressedDynamic_util(f_ecdsa_key_pair **key_pair, uint8_t *private_key)
+{
+   int err;
+
+   if (!(*key_pair=malloc(sizeof(f_ecdsa_key_pair))))
+      return -300;
+
+   (*key_pair)->gid=MBEDTLS_ECP_DP_SECP256K1;
+   (*key_pair)->ctx=NULL;
+
+   if ((err=f_gen_ecdsa_key_pair(*key_pair, MBEDTLS_ECP_PF_COMPRESSED, load_master_private_key, (void *)private_key))) {
+      memset(*key_pair, 0, sizeof(f_ecdsa_key_pair));
+      free(*key_pair);
+      *key_pair=NULL;
+   }
+
+   return err;
+}
+
 /*
  * Class:     org_mynanojava_bitcoin_Util
  * Method:    byteMasterPrivateKeyToWIF
@@ -295,32 +323,161 @@ Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToMasterPublicKey_EXIT1:
 
    return outByteArray;
 }
+
 /*
  * Class:     org_mynanojava_bitcoin_Util
  * Method:    byteMasterPublicKeyToBTC_Address
  * Signature: ([BJ)Ljava/lang/String;
  */
-/*
 JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyToBTC_1Address(JNIEnv *env, jobject thisObj, jbyteArray masterPublicKey, jlong index)
 {
    int err;
    jstring res;
-TODO
+   jbyte *c_master_public_key;
+   jsize jSize;
+   uint8_t public_key_type;
+   char *p;
+
+   if (index<0) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPublicKeyToBTC_Addres: Invalid. Can't be negative index", 5050);
+      return NULL;
+   }
+
+   if (index>((uint32_t)((int)-1))) {
+      sprintf(msg, "byteMasterPublicKeyToBTC_Addres: Invalid index range = %lu", (unsigned long int)index);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, 5051);
+      return NULL;
+   }
+
+   if (!masterPublicKey) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPublicKeyToBTC_Address: Missing master public key", 5052);
+      return NULL;
+   }
+
+   jSize=(*env)->GetArrayLength(env, masterPublicKey);
+   if ((*env)->ExceptionCheck(env)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPublicKeyToBTC_Address: Can't calculate 'masterPublicKey' size", 5053);
+      return NULL;
+   }
+
+   if ((jSize!=sizeof(BITCOIN_SERIALIZE))) {
+      sprintf(msg, "byteMasterPublicKeyToBTC_Address: Wrong master public key size = %d.", (int)jSize);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, 5054);
+      return NULL;
+   }
+
+   if (!(c_master_public_key=(*env)->GetByteArrayElements(env, masterPublicKey, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPublicKeyToBTC_Address: Can't get 'masterPublicKey' in ByteArray", 5055);
+      return NULL;
+   }
+
+   res=NULL;
+
+   if (is_valid_master_public_key_util(&public_key_type, c_master_public_key)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPublicKeyToBTC_Address: Invalid 'masterPublicKey'. Aborting", 5056);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyToBTC_1Address_EXIT1;
+   }
+
+   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, (uint32_t)index, (const void *)c_master_public_key, 0))) {
+      sprintf(msg, "f_bip32_to_public_key_or_private_key @ byteMasterPublicKeyToBTC_Address: Can't extract public key from master public key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyToBTC_1Address_EXIT1;
+   }
+
+   if ((err=f_public_key_to_address(p=msg+64, sizeof(msg)-64, NULL, (uint8_t *)msg, (public_key_type==MAINNET_PUBLIC)?F_BITCOIN_P2PKH:F_BITCOIN_T2PKH))) {
+      sprintf(msg, "f_public_key_to_address @ byteMasterPublicKeyToBTC_Address: Can't parse public key to Base58 address %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+   } else if (!(res=(*env)->NewStringUTF(env, (const char *)p)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyToBTC_1Address_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, masterPublicKey, c_master_public_key, JNI_ABORT);
+
    return res;
 }
-*/
 
 /*
  * Class:     org_mynanojava_bitcoin_Util
  * Method:    byteMasterPrivateKeyToBTC_Address
  * Signature: ([BJ)Ljava/lang/String;
  */
-/*
+
 JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address(JNIEnv *env, jobject thisObj, jbyteArray masterKey, jlong index)
 {
    int err;
    jstring res;
-TODO
+   jbyte *c_master_private_key;
+   jsize jSize;
+   uint8_t private_key_type;
+   f_ecdsa_key_pair *key_pair;
+
+   if (index<0) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToBTC_Address: Invalid. Can't be negative index", 5060);
+      return NULL;
+   }
+
+   if (index>((uint32_t)((int)-1))) {
+      sprintf(msg, "byteMasterPrivateKeyToBTC_Address: Invalid index range = %lu", (unsigned long int)index);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, 5061);
+      return NULL;
+   }
+
+   if (!masterKey) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToBTC_Address: Missing master private key", 5062);
+      return NULL;
+   }
+
+   jSize=(*env)->GetArrayLength(env, masterKey);
+   if ((*env)->ExceptionCheck(env)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToBTC_Address: Can't calculate 'masterKey' size", 5063);
+      return NULL;
+   }
+
+   if ((jSize!=sizeof(BITCOIN_SERIALIZE))) {
+      sprintf(msg, "byteMasterPrivateKeyToBTC_Address: Wrong master private key size = %d.", (int)jSize);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, 5064);
+      return NULL;
+   }
+
+   if (!(c_master_private_key=(*env)->GetByteArrayElements(env, masterKey, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToBTC_Address: Can't get 'masterKey' in ByteArray", 5065);
+      return NULL;
+   }
+
+   res=NULL;
+
+   if (is_valid_master_key_util(&private_key_type, c_master_private_key)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteMasterPrivateKeyToBTC_Address: Invalid 'masterKey'. Aborting", 5066);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT1;
+   }
+
+   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, (uint32_t)index, (const void *)c_master_private_key, 0))) {
+      sprintf(msg, "f_bip32_to_public_key_or_private_key @ byteMasterPrivateKeyToBTC_Address: Can't extract public key from master private key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT2;
+   }
+
+   if ((err=prime256v1KeyPairCompressedDynamic_util(&key_pair, (uint8_t *)&msg[1]))) {
+      sprintf(msg, "prime256v1KeyPairDynamic_util @ byteMasterPrivateKeyToBTC_Address: Can't extract public key from private key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT2;
+   }
+
+   if ((err=f_public_key_to_address(msg, sizeof(msg), NULL, key_pair->public_key, (private_key_type==MAINNET_PRIVATE)?F_BITCOIN_P2PKH:F_BITCOIN_T2PKH))) {
+      sprintf(msg, "f_public_key_to_address @ byteMasterPrivateKeyToBTC_Address: Can't parse public key to Base58 address %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+   } else if (!(res=(*env)->NewStringUTF(env, (const char *)msg)))
+      throwError(env, JAVA_ERR_PARSE_UTF8_STRING);
+
+   memset(key_pair, 0, sizeof(f_ecdsa_key_pair));
+   free(key_pair);
+
+Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT2:
+   memset(msg, 0, sizeof(msg));
+
+Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, masterKey, c_master_private_key, JNI_ABORT);
+
    return res;
 }
-*/
+
