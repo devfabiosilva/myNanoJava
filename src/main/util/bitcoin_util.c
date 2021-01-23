@@ -546,3 +546,79 @@ Java_org_mynanojava_bitcoin_Util_wifToBTC_1Address_EXIT1:
    return res;
 }
 
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    byteDeriveXKey
+ * Signature: ([BLjava/lang/String;)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_bitcoin_Util_byteDeriveXKey(JNIEnv *env, jobject thisObj, jbyteArray xkey, jstring mDepth, jint type)
+{
+   int err;
+   const char *c_m_depth;
+   jbyteArray outByteArray;
+   jbyte *c_xkey;
+   jsize jSize;
+   BITCOIN_SERIALIZE *btc_ser_out;
+
+   if (type&(~(DERIVE_XPRIV_XPUB_DYN_OUT_XPRIV|DERIVE_XPRIV_XPUB_DYN_OUT_XPUB))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteDeriveXKey: Wrong output xkey type", 5079);
+      return NULL;
+   }
+
+   if (!xkey) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteDeriveXKey: Missing xkey", 5080);
+      return NULL;
+   }
+
+   jSize=(*env)->GetArrayLength(env, xkey);
+   if ((*env)->ExceptionCheck(env)) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteDeriveXKey: Can't calculate 'xkey' size", 5081);
+      return NULL;
+   }
+
+   if ((jSize!=sizeof(BITCOIN_SERIALIZE))) {
+      sprintf(msg, "byteDeriveXKey: Wrong xkey size = %d.", (int)jSize);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, 5082);
+      return NULL;
+   }
+
+   if (!(c_xkey=(*env)->GetByteArrayElements(env, xkey, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteDeriveXKey: Can't get 'xkey' in ByteArray", 5083);
+      return NULL;
+   }
+
+   outByteArray=NULL;
+
+   if (!mDepth) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteDeriveXKey: xkey depth", 5084);
+      goto Java_org_mynanojava_bitcoin_Util_byteDeriveXKey_EXIT1;
+   }
+
+   if (!(c_m_depth=(*env)->GetStringUTFChars(env, mDepth, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("byteDeriveXKey: Can't parse xkey depth to C char", 5085);
+      goto Java_org_mynanojava_bitcoin_Util_byteDeriveXKey_EXIT1;
+   }
+
+   if ((err=f_derive_xkey_dynamic((void *)&btc_ser_out, c_xkey, c_m_depth, (int)type))) {
+      sprintf(msg, "f_derive_xkey_dynamic @ byteDeriveXKey: Can't derive from master ou priv or master pub %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_byteDeriveXKey_EXIT2;
+   }
+
+   if ((outByteArray=(*env)->NewByteArray(env, sizeof(BITCOIN_SERIALIZE))))
+      (*env)->SetByteArrayRegion(env, outByteArray, 0, sizeof(BITCOIN_SERIALIZE), (const jbyte *)btc_ser_out);
+   else
+      throwError(env, "byteDeriveXKey: Can't create JNI byte array to export derived Master Public/Private Key");
+
+   memset(btc_ser_out, 0, sizeof(BITCOIN_SERIALIZE));
+   free(btc_ser_out);
+
+Java_org_mynanojava_bitcoin_Util_byteDeriveXKey_EXIT2:
+   (*env)->ReleaseStringUTFChars(env, mDepth, c_m_depth);
+
+Java_org_mynanojava_bitcoin_Util_byteDeriveXKey_EXIT1:
+   (*env)->ReleaseByteArrayElements(env, xkey, c_xkey, JNI_ABORT);
+
+   return outByteArray;
+}
+
