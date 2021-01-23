@@ -16,6 +16,8 @@ import org.mynanojava.wallet.NanoKeyPair;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.bitcoin.Util.*;
 import static org.mynanojava.blockchain.NanoBlock.*;
+import static org.mynanojava.enums.BitcoinDerivationXKeyType.OUT_XPRIV;
+import static org.mynanojava.enums.BitcoinDerivationXKeyType.OUT_XPUB;
 import static org.mynanojava.enums.BitcoinVersionBytesEnum.*;
 import static org.mynanojava.enums.BitcoinWIFTypeEnum.BITCOIN_WIF_MAINNET;
 import static org.mynanojava.enums.BitcoinWIFTypeEnum.BITCOIN_WIF_TESTNET;
@@ -760,5 +762,32 @@ public class MyNanoJavaTest {
         String wifToBITCOIN_Address = wifToBTC_Address(wif);
         System.out.println("WIF to Bitcoin address: " + wifToBITCOIN_Address);
         assertEquals(walletFromMasterPrivateKey, wifToBITCOIN_Address);
+    }
+
+    @Test
+    public void testDeriveKeyClass() throws Throwable {
+        BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE, GOOD);
+        int index = 0;
+        String derivation = "m/1291";
+        assertNotNull(bitcoinWallet);
+        System.out.println("Private Key (master): "+bitcoinWallet.xPrivateKey());
+        System.out.println("Public key (master):  "+bitcoinWallet.xPublicKey());
+        System.out.println("Wallet with derivation: " + derivation + " and index " + index);
+        System.out.println("Bitcoin address: " + bitcoinWallet.toBitcoinAddress(derivation, 0));
+    }
+
+    @Test
+    public void testDeriveKey() throws Throwable {
+        byte[] masterKey = generateByteMasterKey(MAINNET_PRIVATE.getValue(), GOOD.getValue());
+        assertNotNull(masterKey);
+        byte[] masterPublicKey = byteMasterPrivateKeyToMasterPublicKey(masterKey);
+        assertNotNull(masterPublicKey);
+        System.out.println("Master private key (Mainnet) = " + toBase58(masterKey));
+        System.out.println("Master public key (Mainnet) = " + toBase58(masterPublicKey));
+        String derivation = "m/0/0";
+
+        byte[] derivedMaster = byteDeriveXKey(masterKey, derivation, OUT_XPRIV.getValue());
+        System.out.println(toBase58(derivedMaster));
+
     }
 }

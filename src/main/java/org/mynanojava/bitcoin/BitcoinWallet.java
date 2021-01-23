@@ -5,6 +5,7 @@ import org.mynanojava.enums.EntropyTypeEnum;
 import org.mynanojava.exceptions.BitcoinUtilException;
 
 import static org.mynanojava.bitcoin.Util.*;
+import static org.mynanojava.enums.BitcoinDerivationXKeyType.OUT_XPUB;
 
 public class BitcoinWallet {
     private byte[] masterPrivateKey = null;
@@ -61,6 +62,19 @@ public class BitcoinWallet {
             this.masterPublicKey = byteMasterPrivateKeyToMasterPublicKey(this.masterPrivateKey);
 
         return byteMasterPublicKeyToBTC_Address(this.masterPublicKey, index);
+    }
+
+    public String toBitcoinAddress(String derivation, int index) throws Throwable {
+        byte[] xpubDerived;
+
+        if (wif != null)
+            throw new BitcoinUtilException("Method not allowed with WIF", -202);
+
+        if (this.masterPublicKey == null)
+            this.masterPublicKey = byteMasterPrivateKeyToMasterPublicKey(this.masterPrivateKey);
+
+        xpubDerived = byteDeriveXKey(this.masterPublicKey, derivation, OUT_XPUB.getValue());
+        return byteMasterPublicKeyToBTC_Address(xpubDerived, index);
     }
 
 }
