@@ -9,7 +9,6 @@ import static org.mynanojava.bitcoin.Util.*;
 public class BitcoinWallet {
     private byte[] masterPrivateKey = null;
     private byte[] masterPublicKey = null;
-    private int index = 0;
     private String wif = null;
 
     public BitcoinWallet(BitcoinVersionBytesEnum versionBytes, EntropyTypeEnum entropy) throws Throwable {

@@ -274,7 +274,7 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyT
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT1;
    }
 
-   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, (uint32_t)index, (const void *)c_master_key, 0))) {
+   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, NULL, NULL, NULL, (uint32_t)index, (const void *)c_master_key, 0))) {
       sprintf(msg, "f_bip32_to_public_key_or_private_key @ byteMasterPrivateKeyToWIF: Can't extract private key from byte master key %d", err);
       THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToWIF_EXIT2;
@@ -388,7 +388,7 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyTo
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyToBTC_1Address_EXIT1;
    }
 
-   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, (uint32_t)index, (const void *)c_master_public_key, 0))) {
+   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, NULL, NULL, NULL, (uint32_t)index, (const void *)c_master_public_key, 0))) {
       sprintf(msg, "f_bip32_to_public_key_or_private_key @ byteMasterPublicKeyToBTC_Address: Can't extract public key from master public key %d", err);
       THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPublicKeyToBTC_1Address_EXIT1;
@@ -461,7 +461,7 @@ JNIEXPORT jstring JNICALL Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyT
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT1;
    }
 
-   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, (uint32_t)index, (const void *)c_master_private_key, 0))) {
+   if ((err=f_bip32_to_public_key_or_private_key((uint8_t *)msg, NULL, NULL, NULL, NULL, (uint32_t)index, (const void *)c_master_private_key, 0))) {
       sprintf(msg, "f_bip32_to_public_key_or_private_key @ byteMasterPrivateKeyToBTC_Address: Can't extract public key from master private key %d", err);
       THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
       goto Java_org_mynanojava_bitcoin_Util_byteMasterPrivateKeyToBTC_1Address_EXIT2;
