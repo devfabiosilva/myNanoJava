@@ -1,16 +1,17 @@
 package org.mynanojava.blockchain;
 
 import org.mynanojava.MyNanoJava;
+import org.mynanojava.enums.NanoJavaEnumWorkerFeeType;
 
 public class P2PoWBlock {
     private byte[] p2PoWBlock;
 
-    public P2PoWBlock(NanoBlock nanoBlock, String workerAccount, String workerFee, int workerFeeType, String workerRepresentative) throws Exception {
+    public P2PoWBlock(NanoBlock nanoBlock, String workerAccount, String workerFee, NanoJavaEnumWorkerFeeType workerFeeType, String workerRepresentative) throws Exception {
         byte[] blkTmp;
         MyNanoJava myNanoJava = new MyNanoJava();
 
         blkTmp = myNanoJava.nanoBlockToByte(nanoBlock);
-        this.p2PoWBlock = new MyNanoJava().nanoP2PoWBlock(blkTmp, workerAccount, workerFee, workerFeeType, workerRepresentative);
+        this.p2PoWBlock = new MyNanoJava().nanoP2PoWBlock(blkTmp, workerAccount, workerFee, workerFeeType.getValue(), workerRepresentative);
     }
 
     public P2PoWBlock (byte[] nanoBlock, String workerAccount, String workerFee, int workerFeeType, String workerRepresentative) throws Exception {

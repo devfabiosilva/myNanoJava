@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.bitcoin.Util.*;
 import static org.mynanojava.blockchain.NanoBlock.*;
 import static org.mynanojava.enums.BitcoinDerivationXKeyType.OUT_XPRIV;
-import static org.mynanojava.enums.BitcoinDerivationXKeyType.OUT_XPUB;
 import static org.mynanojava.enums.BitcoinVersionBytesEnum.*;
 import static org.mynanojava.enums.BitcoinWIFTypeEnum.BITCOIN_WIF_MAINNET;
 import static org.mynanojava.enums.BitcoinWIFTypeEnum.BITCOIN_WIF_TESTNET;
@@ -172,7 +171,7 @@ public class MyNanoJavaTest {
      */
     @Test
     public void testGenesisBlockWithException() {
-        NanoBlock nanoBlock;
+        NanoBlock nanoBlock = null;
         try {
             // Genesis block should not have any amount
             nanoBlock = myNanoJava.nanoCreateBlock(
@@ -188,6 +187,7 @@ public class MyNanoJavaTest {
             );
             fail("Failed pass 1");
         } catch (Throwable e) {
+            assertNull(nanoBlock);
             assertEquals("nanoCreateBlock: myNanoEmbedded C library error in function \"nano_create_block_dynamic\" 8003",
             e.getMessage());
             System.out.println(e.getMessage()+"\n");
@@ -311,7 +311,7 @@ public class MyNanoJavaTest {
         assertFalse( nanoBlock.hasXRBPrefix(REP_XRB));
 
         p2PoWBlock = new P2PoWBlock(nanoBlock, "nano_3jbj3kpt4jqpcb5f6npznxat3o3184r5ptsribhqy73muhxk3zsh7snznqfc",
-                "0.7", NANO_FEE_REAL.getValue(), null);
+                "0.7", NANO_FEE_REAL, null);
         assertNotEquals(null, p2PoWBlock);
         assertEquals(nanoBlock.getAccount(PRE_DEFINED), p2PoWBlock.getRewardBlock().getAccount(PRE_DEFINED));
         assertEquals(p2PoWBlock.getUserBlock().getAccount(PRE_DEFINED), p2PoWBlock.getRewardBlock().getAccount(PRE_DEFINED));
@@ -768,7 +768,7 @@ public class MyNanoJavaTest {
     public void testDeriveKeyClass() throws Throwable {
         BitcoinWallet bitcoinWallet = new BitcoinWallet(MAINNET_PRIVATE, GOOD);
         int index = 0;
-        String derivation = "m/1291";
+        String derivation = "m/0";
         assertNotNull(bitcoinWallet);
         System.out.println("Private Key (master): "+bitcoinWallet.xPrivateKey());
         System.out.println("Public key (master):  "+bitcoinWallet.xPublicKey());
