@@ -11,6 +11,11 @@ import static org.mynanojava.enums.NanoAccountEnum.*;
 import static org.mynanojava.enums.NanoJavaEnumPrefix.*;
 
 public class NanoBlock {
+
+    static {
+        System.loadLibrary("mynanojava");
+    }
+
     private byte[] account = null;
     private byte[] previous = null;
     private byte[] representative = null;

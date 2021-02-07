@@ -1006,6 +1006,12 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoBytePoW(JNIEnv *env, 
       return -8;
    }
 
+   if (jSize!=32) {
+      sprintf(msg, "nanoBytePoW: Wrong Hash Block size %u", (int)jSize);
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, 239);
+      return -11;
+   }
+
    if (!(c_hash=(*env)->GetByteArrayElements(env, hash, NULL))) {
       THROW_NANO_BLOCK_EXCEPTION(env, "getByteNanoBlockHash: Can't get hash in ByteArray", 237);
       return -9;
@@ -1015,7 +1021,8 @@ JNIEXPORT jlong JNICALL Java_org_mynanojava_MyNanoJava_nanoBytePoW(JNIEnv *env, 
 
    if ((err=f_nano_pow(&result, (unsigned char *)c_hash, (uint64_t)threshold, (int)numberOfThreads))) {
       result=-10;
-      THROW_NANO_BLOCK_EXCEPTION(env, "f_nano_pow @ nanoBytePoW: Can't calculate PoW", 238);
+      sprintf(msg, "f_nano_pow @ nanoBytePoW: Can't calculate PoW %d", err);
+      THROW_NANO_BLOCK_EXCEPTION(env, msg, err);
    }
 
    f_random_detach();
