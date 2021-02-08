@@ -790,4 +790,77 @@ public class MyNanoJavaTest {
         System.out.println(toBase58(derivedMaster));
 
     }
+
+    @Test
+    public void testNewBitcoinInstance() throws Throwable {
+        BitcoinWallet bitcoinWallet = null;
+        try {
+            bitcoinWallet = new BitcoinWallet(null);
+        } catch (Throwable e) {
+            assertEquals(-300,
+                    ((BitcoinUtilException) e).getError());
+        } finally {
+            assertNull(bitcoinWallet);
+        }
+
+        try {
+            bitcoinWallet = new BitcoinWallet("");
+        } catch (Throwable e) {
+            assertEquals(-301, ((BitcoinUtilException) e).getError());
+        } finally {
+            assertNull(bitcoinWallet);
+        }
+
+        String wifMain = "5KaJr4p5R8q6F66F17fCGWVtesSsNNz1WAYMXoivUfW14rH3oWf";
+        String xpriv = "xprv9s21ZrQH143K3exEkBqcUEzbNWC9dr5bP5uKCrquSb7pZu8m99ZqEhwyWiQkdt5P48w1LdJDz13eeqd13Tfic1tVQAaEhS5E2xgieJA2ajr";
+        String xpub = "xpub661MyMwAqRbcG92hrDNcqNwKvY2e3JoSkJpv1FFWzveoShTuggt5nWGTMyyKWHATaDicv2Lxwr4nPX1RfXEZodngg71rRMEKgD5EnCpFAEH";
+        String result;
+
+        bitcoinWallet = new BitcoinWallet(wifMain);
+        result = bitcoinWallet.toBitcoinAddress(0);
+        System.out.println(result);
+
+        result = null;
+        try {
+            result = bitcoinWallet.toBitcoinAddress(1);
+        } catch (Throwable e) {
+            assertTrue(e instanceof BitcoinUtilException);
+            assertEquals(-201, ((BitcoinUtilException)e).getError());
+        } finally {
+            assertNull(result);
+        }
+
+        bitcoinWallet = new BitcoinWallet(xpriv);
+
+        result = bitcoinWallet.toBitcoinAddress(0);
+
+        System.out.println(result);
+
+        result = bitcoinWallet.toBitcoinAddress(1);
+
+        System.out.println(result);
+
+        System.out.println(bitcoinWallet.toWIF(0));
+        System.out.println(bitcoinWallet.xPublicKey());
+        assertEquals(xpriv, bitcoinWallet.xPrivateKey());
+
+        bitcoinWallet = new BitcoinWallet(xpub);
+
+        result = bitcoinWallet.toBitcoinAddress(0);
+        System.out.println(result);
+
+        result = bitcoinWallet.toBitcoinAddress(1);
+        System.out.println(result);
+
+        result = null;
+        try {
+            result = bitcoinWallet.toWIF(0);
+        } catch (Throwable e) {
+            assertTrue(e instanceof BitcoinUtilException);
+            assertEquals(5025, ((BitcoinUtilException) e).getError());
+            System.out.println(e.getMessage());
+        } finally {
+            assertNull(result);
+        }
+    }
 }

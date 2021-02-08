@@ -622,3 +622,117 @@ Java_org_mynanojava_bitcoin_Util_byteDeriveXKey_EXIT1:
    return outByteArray;
 }
 
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    wifToPrivateKey
+ * Signature: (Ljava/lang/String;)[B
+ */
+#define WIF_TO_PRIVATE_KEY_BUF_SZ (size_t)33
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_bitcoin_Util_wifToPrivateKey(JNIEnv *env, jobject thisObj, jstring wif)
+{
+   int err;
+   jbyteArray out;
+   const char *c_wif;
+
+   if (!wif) {
+      THROW_BITCOIN_UTIL_EXCEPTION("wifToPrivateKey: Missing WIF", 5100);
+      return NULL;
+   }
+
+   if (!(c_wif=(*env)->GetStringUTFChars(env, wif, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("wifToPrivateKey: Can't parse WIF to C char", 5101);
+      return NULL;
+   }
+
+   if ((err=f_wif_to_private_key((uint8_t *)&msg[1], (unsigned char *)&msg[0], c_wif))) {
+      out=NULL;
+      sprintf(msg, "f_wif_to_private_key @ wifToPrivateKey: Can't parse WIF to private key %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_wifToPrivateKey_EXIT1;
+   }
+
+   if ((out=(*env)->NewByteArray(env, WIF_TO_PRIVATE_KEY_BUF_SZ)))
+      (*env)->SetByteArrayRegion(env, out, 0, WIF_TO_PRIVATE_KEY_BUF_SZ, (const jbyte *)msg);
+   else
+      throwError(env, "wifToPrivateKey: Can't create JNI byte array to export WIF to byte");
+
+   memset(msg, 0, sizeof(msg));
+
+Java_org_mynanojava_bitcoin_Util_wifToPrivateKey_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, wif, c_wif);
+
+   return out;
+}
+
+int masterKeyToJavaByte_util(JNIEnv *env, jbyteArray *out, jstring masterKey, int *type, const char *function_name)
+{
+   int err;
+   const char *c_master_key;
+
+   *out=NULL;
+
+   if (!masterKey) {
+      sprintf(msg, "%s: Missing master key %d", function_name, err=5150);
+      return err;
+   }
+
+   if (!(c_master_key=(*env)->GetStringUTFChars(env, masterKey, NULL))) {
+      sprintf(msg, "%s: Can't parse master key to C char %d", function_name, err=5151);
+      return err;
+   }
+
+   if ((err=f_get_xkey_type((void *)c_master_key)!=type[0]))
+      if (err!=type[1]) {
+         sprintf(msg, "f_get_xkey_type @ %s: Wrong master key type %d", function_name, err=5152);
+         return err;
+      }
+
+   if ((err=f_bitcoin_valid_bip32((BITCOIN_SERIALIZE *)msg, NULL, (void *)c_master_key, 1))) {
+      sprintf(msg, "f_bitcoin_valid_bip32 @ %s: Can't parse master key to binary %d", function_name, err);
+      goto masterKeyToJavaByte_util_EXIT1;
+   }
+
+   if ((*out=(*env)->NewByteArray(env, sizeof(BITCOIN_SERIALIZE)))) {
+      (*env)->SetByteArrayRegion(env, *out, 0, sizeof(BITCOIN_SERIALIZE), (const jbyte *)msg);
+      memset(msg, 0, sizeof(msg));
+   } else
+      sprintf(msg, "%s: Can't create JNI byte array to export master key to byte %d", function_name, err=5153);
+
+masterKeyToJavaByte_util_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, masterKey, c_master_key);
+
+   return err;
+}
+
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    masterPrivateKeyToByte
+ * Signature: (Ljava/lang/String;)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_bitcoin_Util_masterPrivateKeyToByte(JNIEnv *env, jobject thisObj, jstring masterPrivateKey)
+{
+   int err, type[2] = {F_GET_XKEY_IS_BASE58|(MAINNET_PRIVATE+1), F_GET_XKEY_IS_BASE58|(TESTNET_PRIVATE+1)};
+   jbyteArray out;
+
+   if ((err=masterKeyToJavaByte_util(env, &out, masterPrivateKey, type, "masterPrivateKeyToByte")))
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+
+   return out;
+}
+
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    masterPublicKeyToByte
+ * Signature: (Ljava/lang/String;)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_bitcoin_Util_masterPublicKeyToByte(JNIEnv *env, jobject thisObj, jstring masterPublicKey)
+{
+   int err, type[2] = {F_GET_XKEY_IS_BASE58|(MAINNET_PUBLIC+1), F_GET_XKEY_IS_BASE58|(TESTNET_PUBLIC+1)};
+   jbyteArray out;
+
+   if ((err=masterKeyToJavaByte_util(env, &out, masterPublicKey, type, "masterPublicKeyToByte")))
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+
+   return out;
+}
+

@@ -16,4 +16,7 @@ public class Util {
     public static native String byteMasterPublicKeyToBTC_Address(byte[] publicKey, long index) throws Throwable;
     public static native String wifToBTC_Address(String wif) throws Throwable;
     public static native byte[] byteDeriveXKey(byte[] xkey, String mDepth, int type) throws Throwable;
+    public static native byte[] wifToPrivateKey(String wif) throws Throwable;
+    public static native byte[] masterPrivateKeyToByte(String masterPrivateKey) throws Throwable;
+    public static native byte[] masterPublicKeyToByte(String masterPublicKey) throws Throwable;
 }

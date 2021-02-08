@@ -16,8 +16,27 @@ public class BitcoinWallet {
         this.masterPrivateKey = Util.generateByteMasterKey(versionBytes.getValue(), entropy.getValue());
     }
 
-    public BitcoinWallet(String privateKeyOrPublicKeyOrWif) {
-        //TODO to be implemented
+    public BitcoinWallet(String privateKeyOrPublicKeyOrWif) throws Throwable {
+
+        if (privateKeyOrPublicKeyOrWif == null)
+            throw new BitcoinUtilException("Missing master private|public key or WIF", -300);
+
+        if (privateKeyOrPublicKeyOrWif.length() == 0)
+            throw new BitcoinUtilException("Empty master private|public key or WIF", -301);
+
+        if (privateKeyOrPublicKeyOrWif.startsWith("xprv")||privateKeyOrPublicKeyOrWif.startsWith("tprv")) {
+            this.masterPrivateKey = masterPrivateKeyToByte(privateKeyOrPublicKeyOrWif);
+            return;
+        }
+
+        if (privateKeyOrPublicKeyOrWif.startsWith("xpub")||privateKeyOrPublicKeyOrWif.startsWith("tpub")) {
+            this.masterPublicKey = masterPublicKeyToByte(privateKeyOrPublicKeyOrWif);
+            return;
+        }
+
+        if (wifToPrivateKey(privateKeyOrPublicKeyOrWif) != null)
+            this.wif = privateKeyOrPublicKeyOrWif;
+
     }
 
     public String toWIF(long index) throws Throwable {
@@ -65,7 +84,6 @@ public class BitcoinWallet {
     }
 
     public String toBitcoinAddress(String derivation, int index) throws Throwable {
-        byte[] xpubDerived;
 
         if (wif != null)
             throw new BitcoinUtilException("Method not allowed with WIF", -202);
@@ -73,8 +91,7 @@ public class BitcoinWallet {
         if (this.masterPublicKey == null)
             this.masterPublicKey = byteMasterPrivateKeyToMasterPublicKey(this.masterPrivateKey);
 
-        xpubDerived = byteDeriveXKey(this.masterPublicKey, derivation, OUT_XPUB.getValue());
-        return byteMasterPublicKeyToBTC_Address(xpubDerived, index);
+        return byteMasterPublicKeyToBTC_Address(byteDeriveXKey(this.masterPublicKey, derivation, OUT_XPUB.getValue()), index);
     }
 
 }
