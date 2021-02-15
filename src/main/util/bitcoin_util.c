@@ -736,3 +736,53 @@ JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_bitcoin_Util_masterPublicKeyToB
    return out;
 }
 
+/*
+ * Class:     org_mynanojava_bitcoin_Util
+ * Method:    base58ToByte
+ * Signature: (Ljava/lang/String;)[B
+ */
+#define BASE_58_MAX_BUF_SZ (size_t) 2*F_MAX_BASE58_LENGTH
+JNIEXPORT jbyteArray JNICALL Java_org_mynanojava_bitcoin_Util_base58ToByte(JNIEnv *env, jobject thisObj, jstring base58str)
+{
+   int err;
+   jbyteArray out;
+   const char *c_base58str;
+   uint8_t *c_out;
+   size_t c_out_sz;
+
+   if (!base58str) {
+      THROW_BITCOIN_UTIL_EXCEPTION("base58ToByte: Missing base58str", 5180);
+      return NULL;
+   }
+
+   if (!(c_base58str=(*env)->GetStringUTFChars(env, base58str, NULL))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("base58ToByte: Can't parse Base58 to C char", 5181);
+      return NULL;
+   }
+
+   if (!(c_out=malloc(BASE_58_MAX_BUF_SZ))) {
+      THROW_BITCOIN_UTIL_EXCEPTION("base58ToByte: Can't alloc BASE_58_MAX_BUF_SZ", 5182);
+      return NULL;
+   }
+
+   if ((err=f_decode_b58_util(c_out, BASE_58_MAX_BUF_SZ, &c_out_sz, c_base58str))) {
+      out=NULL;
+      sprintf(msg, "f_decode_b58_util @ base58ToByte: Can't decode Base58 to java byte %d", err);
+      THROW_BITCOIN_UTIL_EXCEPTION(msg, err);
+      goto Java_org_mynanojava_bitcoin_Util_base58ToByte_EXIT1;
+   }
+
+   if (out=(*env)->NewByteArray(env, c_out_sz))
+      (*env)->SetByteArrayRegion(env, out, 0, c_out_sz, (const jbyte *)(&c_out[BASE_58_MAX_BUF_SZ]-c_out_sz));
+   else
+      THROW_BITCOIN_UTIL_EXCEPTION("base58ToByte: Can't create JNI byte array to export Base58 to byte", 5183);
+
+Java_org_mynanojava_bitcoin_Util_base58ToByte_EXIT1:
+   (*env)->ReleaseStringUTFChars(env, base58str, c_base58str);
+
+   memset(c_out, 0, BASE_58_MAX_BUF_SZ);
+   free(c_out);
+
+   return out;
+}
+

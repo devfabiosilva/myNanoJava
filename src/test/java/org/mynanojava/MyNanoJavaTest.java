@@ -13,6 +13,8 @@ import org.mynanojava.exceptions.NanoBlockException;
 import org.mynanojava.exceptions.NanoKeyPairException;
 import org.mynanojava.wallet.NanoKeyPair;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mynanojava.bitcoin.Util.*;
 import static org.mynanojava.blockchain.NanoBlock.*;
@@ -862,5 +864,15 @@ public class MyNanoJavaTest {
         } finally {
             assertNull(result);
         }
+    }
+
+    @Test
+    public void testByteToBase58() throws Throwable {
+        String text = "Buy Bitcoin and Nano";
+        String textToBase58 = toBase58(text.getBytes(StandardCharsets.UTF_8));
+        System.out.println(textToBase58);
+        byte[] toByte = base58ToByte(textToBase58);
+
+        System.out.println("Result " + new String(toByte, "UTF-8"));
     }
 }

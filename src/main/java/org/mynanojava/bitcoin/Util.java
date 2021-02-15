@@ -19,4 +19,5 @@ public class Util {
     public static native byte[] wifToPrivateKey(String wif) throws Throwable;
     public static native byte[] masterPrivateKeyToByte(String masterPrivateKey) throws Throwable;
     public static native byte[] masterPublicKeyToByte(String masterPublicKey) throws Throwable;
+    public static native byte[] base58ToByte(String base58str) throws Throwable;
 }
