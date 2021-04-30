@@ -213,7 +213,7 @@ public class MyNanoJavaTest {
                     e.getMessage());
             System.out.println(e.getMessage()+"\n");
         }
-
+        assertNull(nanoBlock);
         //Does not make sense send 0.0 amount
         try {
             nanoBlock = myNanoJava.nanoCreateBlock(
@@ -233,6 +233,7 @@ public class MyNanoJavaTest {
                     e.getMessage());
             System.out.println(e.getMessage()+"\n");
         }
+        assertNull(nanoBlock);
     }
 
     /**
@@ -358,7 +359,7 @@ public class MyNanoJavaTest {
      */
     @Test
     public void newTrowableMethod() {
-        NanoBlock nanoBlock;
+        NanoBlock nanoBlock = null;
         try {
             nanoBlock = myNanoJava.nanoCreateBlock(
                     null,
@@ -377,7 +378,7 @@ public class MyNanoJavaTest {
             assertEquals("nanoCreateBlock: Missing account", e.getMessage());
             assertEquals(20000, ((NanoBlockException)e).getError());
         }
-
+        assertNull(nanoBlock);
         try {
             nanoBlock = myNanoJava.nanoCreateBlock(
                     "xrb_1i9ugg14c5sph67z4st9xk8xatz59xntofqpbagaihctg6ngog1f45mwoa54",
@@ -395,6 +396,7 @@ public class MyNanoJavaTest {
             assertEquals(8017, ((NanoBlockException) e).getError());
             assertEquals("nanoCreateBlock: myNanoEmbedded C library error in function \"nano_create_block_dynamic\" 8017", e.getMessage());
         }
+        assertNull(nanoBlock);
     }
 
     @Test
@@ -488,19 +490,19 @@ public class MyNanoJavaTest {
             assertEquals("generateNanoSeed: Invalid entropy number 1726", e.getMessage());
         }
 
-        System.out.println(str + NOT_RECOMENDED.toString());
+        System.out.println(str + NOT_RECOMENDED);
         System.out.println(generateNanoSeed(NOT_RECOMENDED.getValue()));
 
-        System.out.println(str + NOT_ENOUGH.toString());
+        System.out.println(str + NOT_ENOUGH);
         System.out.println(generateNanoSeed(NOT_ENOUGH.getValue()));
 
-        System.out.println(str + GOOD.toString());
+        System.out.println(str + GOOD);
         System.out.println(generateNanoSeed(GOOD.getValue()));
 
-        System.out.println(str + " (slow) but secure " + EXCELENT.toString());
+        System.out.println(str + " (slow) but secure " + EXCELENT);
         System.out.println(generateNanoSeed(EXCELENT.getValue()));
 
-        System.out.println(str + " (very slow) paranoic. It can take a little longer ..." + PARANOIC.toString());
+        System.out.println(str + " (very slow) paranoic. It can take a little longer ..." + PARANOIC);
         System.out.println("Please. Move your mouse, open programs, listen a music in your computer to increase system entropy");
         System.out.println("Don't forget. Pick a cup of coffe ;)");
         System.out.println(generateNanoSeed(PARANOIC.getValue()));
@@ -623,15 +625,13 @@ public class MyNanoJavaTest {
         assertTrue(nanoBlock.isBlockSigned());
         System.out.println(nanoBlock.getBlockSignature());
         System.out.println(nanoBlock.toJson());
-        byte[] sig = null;
         try {
-            signatureByteToString(sig);
+            signatureByteToString(null);
+            fail("Should fail here");
         } catch (Throwable e) {
             assertTrue(e instanceof NanoBlockException);
             assertEquals(170, ((NanoBlockException) e).getError());
             assertEquals("signatureByteToString: Missing ByteArray Signature", e.getMessage());
-        } finally {
-            assertNull(sig);
         }
     }
 
@@ -798,11 +798,10 @@ public class MyNanoJavaTest {
         BitcoinWallet bitcoinWallet = null;
         try {
             bitcoinWallet = new BitcoinWallet(null);
+            fail("BitcoinWallet class should fail here");
         } catch (Throwable e) {
             assertEquals(-300,
                     ((BitcoinUtilException) e).getError());
-        } finally {
-            assertNull(bitcoinWallet);
         }
 
         try {
@@ -873,6 +872,6 @@ public class MyNanoJavaTest {
         System.out.println(textToBase58);
         byte[] toByte = base58ToByte(textToBase58);
 
-        System.out.println("Result " + new String(toByte, "UTF-8"));
+        System.out.println("Result " + new String(toByte, StandardCharsets.UTF_8));
     }
 }

@@ -49,7 +49,7 @@ public class MyNanoJavaParameterTest {
      */
     @Before
     public void setUp() {
-        System.out.printf("Initiating ADD/SUB Nano big number balance");
+        System.out.print("Initiating ADD/SUB Nano big number balance");
         myNanoJava = new MyNanoJava();
     }
 
